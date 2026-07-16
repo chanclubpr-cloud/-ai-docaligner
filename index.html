@@ -65,9 +65,9 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
             <!-- LEFT AREA: Controls (5 Cols) -->
-            <div class="lg:col-span-15 space-y-6 lg:col-span-5">
+            <div class="lg:col-span-5 space-y-6">
                 
-                <!-- Box 1: File Uploader (แทนที่ Textarea เเดิม) -->
+                <!-- Box 1: File Uploader -->
                 <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex items-center justify-between">
                         <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5">
@@ -201,8 +201,12 @@
         </div>
     </main>
 
-    <footer class="bg-white border-t border-slate-200 py-4 text-center text-[10px] text-slate-400">
-        AI DocAligner &bull; พัฒนาตามสัญลักษณ์โครงสร้างมาตรฐาน KKU GenAI v1
+    <!-- FOOTER: ปรับแต่งผู้พัฒนาตัวจริง -->
+    <footer class="bg-white border-t border-slate-200 py-5 text-center text-xs text-slate-500 shadow-inner">
+        <div class="max-w-7xl mx-auto px-4 space-y-1">
+            <p class="font-medium text-slate-700">พัฒนาขึ้นโดย <span class="font-bold text-blue-600">Channarong Prasankok</span></p>
+            <p class="text-[10px] text-slate-400">AI DocAligner &bull; พัฒนาตามสัญลักษณ์โครงสร้างมาตรฐาน KKU GenAI v1</p>
+        </div>
     </footer>
 
     <script>
@@ -218,7 +222,6 @@
                 const apiKeyInput = document.getElementById('api-key-input');
                 const keyBadge = document.getElementById('key-badge');
                 
-                // อัปเดตผูกขั้วกับ File Input ตัวใหม่
                 const fileInput = document.getElementById('file-input');
                 const dropZone = document.getElementById('drop-zone');
                 const fileInfoBar = document.getElementById('file-info-bar');
@@ -262,11 +265,9 @@
                     toggleAnalyzeButtonState();
                 });
 
-                // การจัดการไฟล์ Word (.docx)
                 fileInput.addEventListener('change', handleFileSelection);
                 btnDeleteFile.addEventListener('click', clearSelectedFile);
 
-                // ตกแต่งเมื่อลากไฟล์มาซ้อนทับพื้นที่
                 ['dragenter', 'dragover'].forEach(name => {
                     dropZone.addEventListener(name, () => dropZone.classList.add('border-blue-500', 'bg-blue-50/50'));
                 });
@@ -294,18 +295,16 @@
                     dropZone.classList.add('hidden');
                     fileInfoBar.classList.remove('hidden');
 
-                    // แสดงสถานะระหว่างใช้ไลบรารีอ่านไฟล์
                     previewEmpty.classList.add('hidden');
                     previewRenderArea.classList.remove('hidden');
                     previewRenderArea.innerHTML = `<p class="text-slate-400 italic text-[11px] animate-pulse">กำลังสกัดข้อความภายในไฟล์เอกสาร...</p>`;
 
-                    // ใช้ Mammoth.js อ่านไฟล์ Word ทันทีบน Browser
                     const reader = new FileReader();
                     reader.onload = function(event) {
                         const arrayBuffer = event.target.result;
                         mammoth.extractRawText({ arrayBuffer: arrayBuffer })
                             .then(function(result) {
-                                originalTextContent = result.value; // เก็บข้อเสียงวิจัยที่ได้
+                                originalTextContent = result.value;
                                 previewRenderArea.innerHTML = `
                                     <p class="text-slate-400 italic text-[11px] mb-2 border-b pb-1">ดึงข้อมูลสำเร็จ (รอวิเคราะห์):</p>
                                     <p class="text-slate-650 mt-1 whitespace-pre-line leading-relaxed">${originalTextContent.substring(0, 500)}...</p>
@@ -343,7 +342,6 @@
                     }
                 }
 
-                // การสแกนด้วย Skill ผ่าน KKU GenAI
                 btnStartAnalyze.addEventListener('click', async () => {
                     if (!originalTextContent || !apiKey) return;
 
