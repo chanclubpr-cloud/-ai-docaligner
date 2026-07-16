@@ -115,6 +115,9 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
           <i data-lucide="scan-line" class="w-4 h-4"></i><span>สแกนและตรวจสอบโครงสร้างหัวข้อ</span>
         </button>
         <p class="text-[10px] text-slate-400 leading-relaxed">ระบบอ่านสไตล์ (Heading Style) จริงจากไฟล์ .docx โดยตรง ไม่ใช้ AI ในการตัดสินระดับหัวข้อ — ใช้กฎตายตัวตามจำนวนจุดในเลขนำหน้า เพื่อความแม่นยำ 100% และไม่มีการส่งเนื้อหาเอกสารออกนอกเครื่อง</p>
+        <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[10px] text-amber-800 leading-relaxed">
+          <span class="font-bold">⚠ คำเตือน:</span> ระบบจะแปลงย่อหน้า <span class="font-semibold">ทุกจุดในเล่ม</span> ที่จัดแบบ "กระจาย/Justify" (ทั้ง Both และ Thai Distribute) ให้เป็น <span class="font-semibold">ชิดซ้าย</span> เหมือนกันหมด ไม่แยกว่าจุดไหนตั้งใจจัดกระจายไว้ — รูปแบบที่จะได้ผลลัพธ์ดีที่สุดคือเอกสารที่ <span class="font-semibold">ใช้ชิดซ้ายเป็นหลักอยู่แล้วทั้งเล่ม</span> (ไม่ผสมกระจาย/ชิดซ้ายปนกันโดยตั้งใจ) เพราะภาษาไทยเมื่อจัดกระจายมักมีปัญหาระยะห่างตัวอักษรไม่สม่ำเสมออยู่แล้ว
+        </div>
       </div>
 
       <div id="proposal-box" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
@@ -888,13 +891,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 2) ตั้งค่าจัดหน้าเริ่มต้นเอกสารไทย: ชิดซ้าย (ไม่ Justify) + lang th-TH ทุก Run
+    // สำคัญ: ต้องแก้ทั้ง jc="both" (Justify ปกติ) และ jc="thaiDistribute"/"distribute"
+    // (Justify แบบกระจายแถวของไทย/CJK) เพราะทั้งคู่ทำให้ระยะห่างตัวอักษรไม่สม่ำเสมอเหมือนกัน
+    const JUSTIFY_VALUES_TO_FIX = ['both', 'thaiDistribute', 'distribute'];
     const allParas = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p'));
     allParas.forEach(p => {
       const pPrList = p.getElementsByTagNameNS(W_NS, 'pPr');
       if (pPrList.length) {
         const jcList = pPrList[0].getElementsByTagNameNS(W_NS, 'jc');
-        if (jcList.length && jcList[0].getAttributeNS(W_NS,'val') === 'both') {
-          jcList[0].setAttributeNS(W_NS, 'w:val', 'left');
+        if (jcList.length) {
+          const jcVal = jcList[0].getAttributeNS(W_NS,'val') || jcList[0].getAttribute('w:val');
+          if (JUSTIFY_VALUES_TO_FIX.includes(jcVal)) {
+            jcList[0].setAttributeNS(W_NS, 'w:val', 'left');
+          }
         }
       }
       const runProps = p.getElementsByTagNameNS(W_NS, 'rPr');
