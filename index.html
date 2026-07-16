@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI DocAligner - ระบบจัดระดับหัวข้อเอกสารวิชาการ</title>
+<title>AI DocAligner V 1.5 - ระบบจัดระดับหัวข้อเอกสารวิชาการ</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -210,6 +210,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // เลขเปล่าไม่มีจุด (1. 2. 3.) มักเป็นแค่ bullet list ย่อย ไม่ใช่หัวข้อหลัก จึงไม่รวมในการตรวจ
   // \s* (ไม่ใช่ \s+) ท้าย pattern เพราะในชีวิตจริงบางคนพิมพ์เลขติดกับข้อความเลย ไม่เว้นวรรค/แท็บ
   const NUMBER_RE = /^\s*(\d+\.\d+(?:\.\d+)*)\.?\s*/;
+  // รูปแบบเลขวงเล็บ เช่น 1) 2) 3) — ใช้สำหรับ Staircase Indent เท่านั้น ไม่เกี่ยวกับการตรวจ Heading Style
+  const BRACKET_RE = /^\s*(\d+)\)\s*/;
+  // เลขเปล่า เช่น "1." "2." — ความหมายกำกวม: บางเอกสารใช้เป็นหัวข้อใหญ่ของบท (Heading2)
+  // บางเอกสารใช้เป็นรายการย่อยระดับลึก (เหมือน 1) 2)) — ต้องดูบริบทตำแหน่งในเอกสารประกอบ
+  const BARE_NUMBER_RE = /^\s*(\d+)\.\s*/;
 
   function expectedStyle(numberStr) {
     const dots = (numberStr.match(/\./g) || []).length;
@@ -314,9 +319,12 @@ document.addEventListener('DOMContentLoaded', () => {
       // สำหรับ "บทที่ x" ให้กินยาวถึงจบเลข/คำที่ตามมาติดกัน แล้วเว้นช่องว่างท้ายไว้เผื่อ trim
       const cm = /^\s*บทที่\s*\S+\s*/.exec(fullText);
       if (cm) { m = cm; L = cm[0].length; }
-    } else {
+    } else if (NUMBER_RE.test(fullText)) {
       const nm = NUMBER_RE.exec(fullText);
       if (nm) { m = nm; L = nm[0].length; }
+    } else {
+      const bm = BRACKET_RE.exec(fullText);
+      if (bm) { m = bm; L = bm[0].length; }
     }
     if (!m || L === 0) return false;
 
@@ -407,25 +415,20 @@ document.addEventListener('DOMContentLoaded', () => {
     return parts.slice(0, -1).join('.');
   }
 
-  // คำนวณ + ใส่ w:ind แบบ staircase ให้ทุกหัวข้อ (บรรทัดถัดไปกลับไปชิดซ้ายสุดเสมอ)
-  function applyStaircaseIndent(items, paras) {
-    const indentMap = {};
-    const widthMap = {};
+  // คำนวณ + ใส่ w:ind แบบ staircase ให้ทั้งเอกสารตามลำดับจริง (เดินทีละย่อหน้าตามที่ปรากฏในไฟล์)
+  // กติกา:
+  //  - หัวข้อจุด (x.x, x.x.x, ...): เยื้อง = ตำแหน่งข้อความของหัวข้อแม่ (indent(แม่)+ความกว้างเลขแม่)
+  //  - รายการวงเล็บ (1) 2) 3)) และย่อหน้าเนื้อหาธรรมดา (ไม่มีเลข): เยื้อง = ตำแหน่งข้อความของหัวข้อจุดล่าสุดที่เจอ
+  //  - "บทที่ x": อยู่กึ่งกลาง ไม่เข้า staircase และไม่นับเป็น anchor
+  function applyStaircaseIndent() {
+    if (!xmlDoc) return;
+    const items = classifyDocument();
+    const indentMap = {};   // numberStr -> ตำแหน่งเลขของหัวข้อนั้น (twips)
+    const widthMap = {};    // numberStr -> ความกว้างของเลขนั้น (twips)
+    let currentTextStart = BASE_INDENT_TWIPS; // ตำแหน่งข้อความของหัวข้อล่าสุดที่เจอ (anchor สำหรับ bracket/plain/bullet)
+    const anomalies = [];
 
-    items.forEach((item, i) => {
-      const p = paras[i];
-      if (item.number === 'บทที่') return; // บทที่ อยู่กึ่งกลาง ไม่เข้า staircase
-
-      const { family, sizePt } = getRunFont(p);
-      const parentNum = parentNumberOf(item.number);
-      const indent = (parentNum && indentMap[parentNum] !== undefined)
-        ? indentMap[parentNum] + widthMap[parentNum]
-        : BASE_INDENT_TWIPS;
-
-      indentMap[item.number] = indent;
-      widthMap[item.number] = measureTextWidthTwips(item.number, family, sizePt);
-
-      // ตั้ง w:ind: left=0 (บรรทัดถัดไปชิดซ้ายสุด) + firstLine=indent (บรรทัดแรกเยื้องตามระดับ)
+    function setIndent(p, twips) {
       let pPr = p.getElementsByTagNameNS(W_NS, 'pPr')[0];
       if (!pPr) {
         pPr = xmlDoc.createElementNS(W_NS, 'w:pPr');
@@ -436,11 +439,60 @@ document.addEventListener('DOMContentLoaded', () => {
         indEl = xmlDoc.createElementNS(W_NS, 'w:ind');
         pPr.appendChild(indEl);
       }
-      // ล้างค่าเดิมทั้งหมด (hanging/left/firstLine เดิม) แล้วตั้งใหม่ตามกฎ staircase
       ['w:left','w:hanging','w:firstLine','w:start'].forEach(attr => indEl.removeAttribute(attr));
       indEl.setAttributeNS(W_NS, 'w:left', '0');
-      indEl.setAttributeNS(W_NS, 'w:firstLine', String(Math.max(indent, 0)));
+      indEl.setAttributeNS(W_NS, 'w:firstLine', String(Math.max(twips, 0)));
+    }
+
+    items.forEach(item => {
+      const { p, text, kind } = item;
+      if (kind === 'empty' || kind === 'chapter') return; // บทที่ อยู่กึ่งกลาง ไม่ปรับ ind และไม่ใช้เป็น anchor
+
+      if (kind === 'dotted') {
+        const number = item.number;
+        const { family, sizePt } = getRunFont(p);
+        const parentNum = parentNumberOf(number);
+        const indent = (parentNum && indentMap[parentNum] !== undefined)
+          ? indentMap[parentNum] + widthMap[parentNum]
+          : BASE_INDENT_TWIPS;
+        indentMap[number] = indent;
+        widthMap[number] = measureTextWidthTwips(number, family, sizePt);
+        currentTextStart = indent + widthMap[number];
+        setIndent(p, indent);
+        return;
+      }
+
+      if (kind === 'bareHeading') {
+        // เลขเปล่าที่ตัดสินแล้วว่าเป็นหัวข้อใหญ่ของบท (ไม่มี x.x มาก่อนในบทนี้) — อยู่ระดับบนสุดเหมือน x.x ตัวแรก
+        const number = item.number;
+        const { family, sizePt } = getRunFont(p);
+        const indent = BASE_INDENT_TWIPS;
+        indentMap[number] = indent;
+        widthMap[number] = measureTextWidthTwips(number + '.', family, sizePt);
+        currentTextStart = indent + widthMap[number];
+        setIndent(p, indent);
+        return;
+      }
+
+      if (kind === 'bareBullet' || kind === 'bareAmbiguous' || kind === 'bracket') {
+        if (kind === 'bareAmbiguous') {
+          anomalies.push(`เลข "${text.slice(0,15)}..." อยู่ในตำแหน่งก้ำกึ่ง (มีหัวข้อ x.x มาก่อน แต่ยังไม่ถึงระดับ x.x.x) — ระบบจัดเป็นรายการย่อยไว้ก่อน กรุณาตรวจสอบว่าถูกต้องหรือควรเป็นหัวข้อใหญ่`);
+        }
+        if (kind === 'bracket') {
+          const stray = /^\s*\d+\)\s*([A-Za-z])\s/.exec(text);
+          if (stray) {
+            anomalies.push(`พบอักขระ "${stray[1]}" ติดอยู่หลังเลข "${text.slice(0, 15)}..." — อาจพิมพ์หลุด กรุณาตรวจสอบด้วยตนเอง (ระบบไม่แก้ไขเนื้อหาให้อัตโนมัติ)`);
+          }
+        }
+        setIndent(p, currentTextStart);
+        return;
+      }
+
+      // plain: ย่อหน้าเนื้อหาธรรมดา ไม่มีเลขนำหน้าเลย — เกาะกับตำแหน่งข้อความของหัวข้อล่าสุด
+      setIndent(p, currentTextStart);
     });
+
+    return anomalies;
   }
 
   function getParaText(p) {
@@ -458,40 +510,141 @@ document.addEventListener('DOMContentLoaded', () => {
     return styleList[0].getAttributeNS(W_NS, 'val') || styleList[0].getAttribute('w:val');
   }
 
+  // อ่านตำแหน่งเยื้องบรรทัดแรก "เดิม" ของย่อหน้า (ก่อนที่ระบบจะเข้าไปแก้ w:ind) หน่วย twips
+  // ใช้เป็นสัญญาณช่วยแยกแยะเลขเปล่ากำกวม: หัวข้อใหญ่มักเยื้องตื้นกว่ารายการย่อยที่ซ้อนลึก
+  function getOriginalFirstLineIndent(p) {
+    const pPrList = p.getElementsByTagNameNS(W_NS, 'pPr');
+    if (!pPrList.length) return 0;
+    const indList = pPrList[0].getElementsByTagNameNS(W_NS, 'ind');
+    if (!indList.length) return 0;
+    const ind = indList[0];
+    const num = (attr) => {
+      const v = ind.getAttributeNS(W_NS, attr) || ind.getAttribute('w:' + attr) || '0';
+      const n = parseInt(v, 10);
+      return isNaN(n) ? 0 : n;
+    };
+    return num('left') + num('firstLine') - num('hanging');
+  }
+
+  // ---- จำแนกประเภทของทุกย่อหน้าในเอกสาร (ใช้ร่วมกันทั้งขั้นตรวจ Style และขั้นจัด Staircase Indent) ----
+  // เลขเปล่า "1." "2." ความหมายกำกวม ต้องดูบริบท: ไล่ตามลำดับเอกสาร ติดตาม
+  // "ความลึกสูงสุดที่เคยเจอในบทปัจจุบัน" (maxDots) เพื่อตัดสินว่า "1." คือหัวข้อใหญ่ หรือรายการย่อยลึก
+  //   - maxDots === 0 (ยังไม่เคยเจอ x.x เลยในบทนี้)   -> ถือเป็นหัวข้อใหญ่ (bareHeading, เทียบเท่า Heading2)
+  //   - maxDots >= 2  (เคยเจอ x.x.x ขึ้นไปแล้ว)         -> ถือเป็นรายการย่อย (bareBullet, เหมือน 1) 2))
+  //   - maxDots === 1 (เจอแค่ x.x)                       -> ก้ำกึ่ง ไม่เดา (bareAmbiguous) ให้ผู้ใช้ยืนยันเอง
+  function classifyDocument() {
+    const paragraphs = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p'));
+    const results = [];
+    let maxDots = 0;
+    let prevIndent = 0; // ตำแหน่งเยื้องเดิมของย่อหน้าก่อนหน้า (ใช้ตรวจ "dedent" สำหรับเลขเปล่ากำกวม)
+    const DEDENT_THRESHOLD = 200; // twips — เยื้องตื้นกว่าอันก่อนหน้าอย่างน้อยขนาดนี้ถึงถือว่าเป็นการ "ย่อกลับ" จริง
+
+    paragraphs.forEach(p => {
+      const text = getParaText(p);
+      if (!text) { results.push({ p, text, kind: 'empty' }); return; }
+      const originalIndent = getOriginalFirstLineIndent(p);
+
+      if (CHAPTER_RE.test(text)) {
+        maxDots = 0; // ขึ้นบทใหม่ รีเซ็ตบริบท
+        prevIndent = originalIndent;
+        results.push({ p, text, kind: 'chapter' });
+        return;
+      }
+
+      const dotted = NUMBER_RE.exec(text);
+      if (dotted) {
+        const number = dotted[1];
+        const dots = (number.match(/\./g) || []).length;
+        if (dots > maxDots) maxDots = dots;
+        prevIndent = originalIndent;
+        results.push({ p, text, kind: 'dotted', number });
+        return;
+      }
+
+      const bare = BARE_NUMBER_RE.exec(text);
+      if (bare && !/^\d/.test(text.slice(bare[0].length))) {
+        const number = bare[1];
+        let kind;
+        if (maxDots === 0) {
+          kind = 'bareHeading';
+        } else if (maxDots >= 2) {
+          // กำกวมโดยกติกาเดิม — ใช้ "การย่อกลับ (dedent)" ของระยะเยื้องเดิมช่วยตัดสิน
+          if (originalIndent < prevIndent - DEDENT_THRESHOLD) {
+            kind = 'bareHeading'; // เยื้องตื้นกว่าเดิมอย่างชัดเจน = น่าจะขึ้นหัวข้อใหญ่ใหม่
+            maxDots = 0; // เริ่มบริบทใหม่เหมือนขึ้นบทใหม่
+          } else {
+            kind = 'bareBullet';
+          }
+        } else {
+          // maxDots === 1: ยังกำกวม ลองใช้ dedent ช่วยตัดสินก่อน ถ้าตัดสินไม่ได้ค่อย flag เตือน
+          if (originalIndent < prevIndent - DEDENT_THRESHOLD) {
+            kind = 'bareHeading';
+            maxDots = 0;
+          } else if (originalIndent >= prevIndent) {
+            kind = 'bareBullet';
+          } else {
+            kind = 'bareAmbiguous';
+          }
+        }
+        prevIndent = originalIndent;
+        results.push({ p, text, kind, number });
+        return;
+      }
+
+      const bracket = BRACKET_RE.exec(text);
+      if (bracket) { prevIndent = originalIndent; results.push({ p, text, kind: 'bracket', number: bracket[1] }); return; }
+
+      prevIndent = originalIndent;
+      results.push({ p, text, kind: 'plain' });
+    });
+
+    return results;
+  }
+
   // ---- ขั้นตอนที่ 1-2: สกัดโครงสร้างจริง + เทียบระดับ (deterministic JS, ไม่ใช้ AI) ----
   btnStartAnalyze.addEventListener('click', () => {
     if (!xmlDoc) return;
-    const paragraphs = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p'));
     headingItems = [];
     paraElements = [];
     const seenNumbers = [];
+    const ambiguousWarnings = [];
 
-    paragraphs.forEach((p, idx) => {
-      const text = getParaText(p);
-      if (!text) return;
+    const classified = classifyDocument();
+
+    classified.forEach(item => {
+      const { p, text, kind } = item;
       const currentStyle = getPStyle(p) || '(ไม่มี Style)';
 
-      if (CHAPTER_RE.test(text)) {
+      if (kind === 'chapter') {
         const status = currentStyle === 'Heading1' ? '✓ ถูกต้อง' : '❌ ผิดพลาด';
-        headingItems.push({ text: text.slice(0,60), number: 'บทที่', expected: 'Heading1', current: currentStyle, status, paraIndex: idx });
+        headingItems.push({ text: text.slice(0,60), number: 'บทที่', expected: 'Heading1', current: currentStyle, status });
         paraElements.push(p);
         return;
       }
-      const m = NUMBER_RE.exec(text);
-      if (!m) return;
-      const number = m[1];
-      const expected = expectedStyle(number);
-      let status;
-      if (currentStyle === '(ไม่มี Style)') status = '⚠ ไม่มี Style';
-      else if (currentStyle === expected) status = '✓ ถูกต้อง';
-      else status = '❌ ผิดพลาด';
-      headingItems.push({ text: text.slice(0,60), number, expected, current: currentStyle, status, paraIndex: idx });
-      paraElements.push(p);
-      seenNumbers.push(number);
+
+      if (kind === 'dotted' || kind === 'bareHeading') {
+        const number = item.number;
+        const expected = expectedStyle(number);
+        let status;
+        if (currentStyle === '(ไม่มี Style)') status = '⚠ ไม่มี Style';
+        else if (currentStyle === expected) status = '✓ ถูกต้อง';
+        else status = '❌ ผิดพลาด';
+        headingItems.push({ text: text.slice(0,60), number, expected, current: currentStyle, status });
+        paraElements.push(p);
+        seenNumbers.push(number);
+        return;
+      }
+
+      if (kind === 'bareAmbiguous') {
+        ambiguousWarnings.push(`เลข "${text.slice(0,20)}..." อยู่ในตำแหน่งก้ำกึ่ง (มีหัวข้อ x.x มาก่อนแล้ว แต่ยังไม่ถึง x.x.x) — ยังไม่ตัดสินให้ว่าเป็นหัวข้อใหญ่หรือรายการย่อย กรุณาตรวจสอบด้วยตนเอง`);
+      }
+      // bracket / bareBullet / plain / empty: ไม่เข้าตารางตรวจ Style (ใช้แค่ตอนจัด Staircase Indent)
     });
 
+    const paragraphs = classified; // เผื่อใช้ index อ้างอิงต่อในอนาคต
+
     // ตรวจความต่อเนื่อง: เลขซ้ำ + หัวข้อเดี่ยวไม่มีคู่ระดับเดียวกันภายใต้แม่เดียวกัน
-    const warnings = [];
+    const warnings = [...ambiguousWarnings];
     const dupCount = {};
     seenNumbers.forEach(n => { dupCount[n] = (dupCount[n]||0)+1; });
     Object.keys(dupCount).forEach(n => { if (dupCount[n] > 1) warnings.push(`พบเลขหัวข้อ "${n}" ซ้ำกัน ${dupCount[n]} ครั้ง`); });
@@ -625,11 +778,21 @@ document.addEventListener('DOMContentLoaded', () => {
       item.status = '✓ แก้ไขแล้ว';
     });
 
-    // 1b) แก้ Tab ให้ทุกหัวข้อ (แทนที่การเว้นวรรคด้วย <w:tab/>) เพื่อให้ตำแหน่งข้อความชิดคอลัมน์เดียวกัน
-    paraElements.forEach(p => normalizeNumberTab(p));
+    // 1b) แก้ Tab ให้ทุกหัวข้อ/รายการ (แทนที่การเว้นวรรคด้วย <w:tab/>) รวมถึงแบบ 1) 2) ด้วย
+    Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p')).forEach(p => normalizeNumberTab(p));
 
-    // 1c) จัดระยะเยื้องแบบ Staircase ตามความกว้างจริงของเลขระดับบนหน้ามัน (ไม่แตะเลข/สัญลักษณ์ใดๆ)
-    const runStaircase = () => applyStaircaseIndent(headingItems, paraElements);
+    // 1c) จัดระยะเยื้องแบบ Staircase ทั้งเอกสาร (หัวข้อจุด + รายการวงเล็บ 1)2) + ย่อหน้าเนื้อหา) ไม่แตะเลข/สัญลักษณ์ใดๆ
+    const runStaircase = () => {
+      const anomalies = applyStaircaseIndent() || [];
+      if (anomalies.length) {
+        const box = document.getElementById('final-export-box');
+        const note = document.createElement('div');
+        note.className = 'p-3 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 space-y-1';
+        note.innerHTML = '<div class="font-bold flex items-center gap-1">⚠ พบจุดที่ควรตรวจสอบด้วยตนเอง</div><ul class="list-disc pl-4 space-y-1">' +
+          anomalies.map(a => `<li>${escapeHtml(a)}</li>`).join('') + '</ul>';
+        box.appendChild(note);
+      }
+    };
     if (document.fonts && document.fonts.ready) {
       // รอให้ฟอนต์ TH Sarabun New/PSK โหลดเสร็จก่อน เพื่อความแม่นยำของการวัดความกว้าง
       Promise.all([
