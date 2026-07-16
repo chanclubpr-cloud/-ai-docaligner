@@ -157,7 +157,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // 0 จุด (เลขเดี่ยว) -> Heading2, 1 จุด -> Heading3, 2 จุด -> Heading4, 3 จุด -> Heading5
   const LEVEL_MAP = { 0: 'Heading2', 1: 'Heading3', 2: 'Heading4', 3: 'Heading5' };
   const CHAPTER_RE = /^\s*บทที่\s*\S+/;
-  const NUMBER_RE = /^\s*(\d+(?:\.\d+)*)\.?\s+/;
+  // ต้องมีอย่างน้อย 1 จุด (x.x) จึงถือเป็นหัวข้อจริงตามลำดับชั้นของบท
+  // เลขเปล่าไม่มีจุด (1. 2. 3.) มักเป็นแค่ bullet list ย่อย ไม่ใช่หัวข้อหลัก จึงไม่รวมในการตรวจ
+  // \s* (ไม่ใช่ \s+) ท้าย pattern เพราะในชีวิตจริงบางคนพิมพ์เลขติดกับข้อความเลย ไม่เว้นวรรค/แท็บ
+  const NUMBER_RE = /^\s*(\d+\.\d+(?:\.\d+)*)\.?\s*/;
 
   function expectedStyle(numberStr) {
     const dots = (numberStr.match(/\./g) || []).length;
@@ -237,6 +240,87 @@ document.addEventListener('DOMContentLoaded', () => {
     updateStepsIndicator(1);
   }
 
+  // ---- ตรวจ/แก้ Tab หลังเลขนำหน้าหัวข้อ ----
+  // ในทางปฏิบัติแต่ละคนพิมพ์ไม่เหมือนกัน: บางคนกด Tab, บางคนเว้นวรรค, บางคนพิมพ์ติดกันเลย
+  // ฟังก์ชันนี้จึงตรวจจากเนื้อหาจริงของทั้งย่อหน้า (ไม่สนใจว่าเดิมคั่นด้วยอะไร)
+  // แล้ว "รีเซ็ต" ให้เป็น Tab เดียวกันทุกหัวข้อเสมอ
+  function normalizeNumberTab(p) {
+    const runs = Array.from(p.childNodes).filter(n => n.localName === 'r');
+    if (!runs.length) return false;
+
+    // เก็บ mapping: run -> tNode -> ตำแหน่งเริ่ม/จบใน fullText
+    const segments = []; // {run, tNode, start, end}
+    let fullText = '';
+    runs.forEach(r => {
+      const tNodes = r.getElementsByTagNameNS(W_NS, 't');
+      Array.from(tNodes).forEach(t => {
+        const start = fullText.length;
+        fullText += (t.textContent || '');
+        segments.push({ run: r, tNode: t, start, end: fullText.length });
+      });
+    });
+
+    let m = null, L = 0;
+    if (CHAPTER_RE.test(fullText)) {
+      // สำหรับ "บทที่ x" ให้กินยาวถึงจบเลข/คำที่ตามมาติดกัน แล้วเว้นช่องว่างท้ายไว้เผื่อ trim
+      const cm = /^\s*บทที่\s*\S+\s*/.exec(fullText);
+      if (cm) { m = cm; L = cm[0].length; }
+    } else {
+      const nm = NUMBER_RE.exec(fullText);
+      if (nm) { m = nm; L = nm[0].length; }
+    }
+    if (!m || L === 0) return false;
+
+    // ตัดช่องว่างท้ายออกจากความยาวที่แมตช์ เพื่อหาตำแหน่ง "จบเลขจริงๆ" (ก่อนที่จะแทรก Tab)
+    const matchedRaw = fullText.slice(0, L);
+    const trimmedLen = matchedRaw.replace(/\s+$/, '').length;
+    if (trimmedLen === 0) return false;
+
+    // ถ้าถัดจากตำแหน่งที่ตัดเลขจบ (นับช่องว่างที่เหลือ) เป็น <w:tab/> อยู่แล้วพอดี ไม่ต้องทำอะไร
+    // หาว่า segment ไหนคือจุดตัด (ที่ตำแหน่ง trimmedLen)
+    let splitSeg = segments.find(s => trimmedLen > s.start && trimmedLen <= s.end);
+    if (!splitSeg) splitSeg = segments.find(s => trimmedLen === s.end) || segments[segments.length - 1];
+
+    const localOffset = trimmedLen - splitSeg.start;
+    const fullSegText = splitSeg.tNode.textContent || '';
+    const prefixText = fullSegText.slice(0, localOffset);
+    const suffixText = fullSegText.slice(localOffset).replace(/^\s+/, ''); // ตัดช่องว่างที่เหลืออยู่หน้าข้อความจริง
+
+    // เช็คว่ามี <w:tab/> วางอยู่ถัดจากตำแหน่งนี้แล้วหรือยัง (กรณีคนพิมพ์ tab ไว้แล้ว)
+    let checkNode = splitSeg.run.nextSibling;
+    while (checkNode && checkNode.nodeType !== 1) checkNode = checkNode.nextSibling;
+    const alreadyHasTab = suffixText === '' && checkNode && checkNode.localName === 'r' &&
+      checkNode.getElementsByTagNameNS(W_NS, 'tab').length > 0;
+    if (alreadyHasTab) return false;
+
+    // แก้ node ปัจจุบันให้เหลือแค่ prefix (เลขหัวข้อ)
+    splitSeg.tNode.textContent = prefixText;
+
+    const rPrSrc = splitSeg.run.getElementsByTagNameNS(W_NS, 'rPr')[0];
+
+    // สร้าง run ใหม่สำหรับ Tab
+    const tabRun = xmlDoc.createElementNS(W_NS, 'w:r');
+    if (rPrSrc) tabRun.appendChild(rPrSrc.cloneNode(true));
+    tabRun.appendChild(xmlDoc.createElementNS(W_NS, 'w:tab'));
+
+    let insertAfter = splitSeg.run;
+
+    // ถ้ามีข้อความเหลือติดอยู่ในโหนดเดิม (พิมพ์เลขติดกับข้อความในรันเดียวกัน) ต้องแยกออกมาเป็น run ใหม่
+    if (suffixText.length > 0) {
+      const suffixRun = xmlDoc.createElementNS(W_NS, 'w:r');
+      if (rPrSrc) suffixRun.appendChild(rPrSrc.cloneNode(true));
+      const suffixT = xmlDoc.createElementNS(W_NS, 'w:t');
+      suffixT.setAttribute('xml:space', 'preserve');
+      suffixT.textContent = suffixText;
+      suffixRun.appendChild(suffixT);
+      splitSeg.run.parentNode.insertBefore(tabRun, splitSeg.run.nextSibling);
+      splitSeg.run.parentNode.insertBefore(suffixRun, tabRun.nextSibling);
+    } else {
+      splitSeg.run.parentNode.insertBefore(tabRun, splitSeg.run.nextSibling);
+    }
+    return true;
+  }
+
   function getParaText(p) {
     const runs = p.getElementsByTagNameNS(W_NS, 't');
     let text = '';
@@ -314,6 +398,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+
+    // ตรวจ (แต่ยังไม่แก้) ว่าหัวข้อไหนใช้ช่องว่างแทน Tab บ้าง เพื่อแจ้งเตือนก่อน
+    let tabIssueCount = 0;
+    headingItems.forEach((item, i) => {
+      const p = paraElements[i];
+      const runs = Array.from(p.childNodes).filter(n => n.localName === 'r');
+      let acc = '';
+      for (const r of runs) {
+        const tNodes = r.getElementsByTagNameNS(W_NS, 't');
+        acc += Array.from(tNodes).map(t => t.textContent).join('');
+        if (CHAPTER_RE.test(acc) || NUMBER_RE.test(acc)) {
+          let sib = r.nextSibling;
+          while (sib && sib.nodeType !== 1) sib = sib.nextSibling;
+          const hasTab = sib && sib.localName === 'r' && sib.getElementsByTagNameNS(W_NS,'tab').length > 0;
+          if (!hasTab) tabIssueCount++;
+          break;
+        }
+      }
+    });
+    if (tabIssueCount > 0) {
+      warnings.push(`พบหัวข้อ ${tabIssueCount} รายการที่ใช้ "เว้นวรรค" แทน "Tab" หลังเลขนำหน้า ทำให้ตำแหน่งข้อความไม่ชิดคอลัมน์เดียวกัน — จะถูกแก้เป็น Tab ให้อัตโนมัติตอนกดอนุมัติ`);
+    }
 
     renderProposalTable(headingItems, warnings);
     updateStepsIndicator(2);
@@ -396,6 +502,9 @@ document.addEventListener('DOMContentLoaded', () => {
       item.current = item.expected;
       item.status = '✓ แก้ไขแล้ว';
     });
+
+    // 1b) แก้ Tab ให้ทุกหัวข้อ (แทนที่การเว้นวรรคด้วย <w:tab/>) เพื่อให้ตำแหน่งข้อความชิดคอลัมน์เดียวกัน
+    paraElements.forEach(p => normalizeNumberTab(p));
 
     // 2) ตั้งค่าจัดหน้าเริ่มต้นเอกสารไทย: ชิดซ้าย (ไม่ Justify) + lang th-TH ทุก Run
     const allParas = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p'));
