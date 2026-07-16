@@ -1,544 +1,459 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI DocAligner - ระบบจัดระดับหัวข้อเอกสารวิชาการ</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Mammoth.js สำหรับแปลงไฟล์ Word (.docx) เป็น Text บน Browser โดยตรง -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-        body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: #f1f5f9;
-        }
-        .thai-document-style {
-            text-align: left !important;
-            word-break: break-word;
-            line-height: 1.625;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI DocAligner - ระบบจัดระดับหัวข้อเอกสารวิชาการ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
+.thai-document-style{text-align:left !important;word-break:break-word;line-height:1.625;}
+</style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
 
-    <!-- Header & API Key Setup -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="bg-blue-600 text-white p-2 rounded-lg">
-                    <i data-lucide="file-check-2" class="w-6 h-6"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-base leading-none text-slate-900">AI DocAligner</h1>
-                    <span class="text-[11px] text-slate-500">ตรวจสอบและแก้ไขลำดับชั้นหัวข้อเอกสาร Word (Heading Style)</span>
-                </div>
+<header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="bg-blue-600 text-white p-2 rounded-lg"><i data-lucide="file-check-2" class="w-6 h-6"></i></div>
+      <div>
+        <h1 class="font-bold text-base leading-none text-slate-900">AI DocAligner</h1>
+        <span class="text-[11px] text-slate-500">ตรวจสอบและแก้ไขลำดับชั้นหัวข้อเอกสาร Word (Heading Style)</span>
+      </div>
+    </div>
+    <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded font-medium">ประมวลผลในเบราว์เซอร์ — ไม่ส่งไฟล์ออกเซิร์ฟเวอร์</span>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+  <div class="mb-6 bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-around text-xs font-semibold text-slate-400">
+    <div id="s-step-1" class="text-blue-600 flex items-center space-x-2"><span class="w-5 h-5 rounded-full border border-blue-600 inline-flex items-center justify-center">1</span><span>แนบไฟล์เอกสาร Word</span></div>
+    <div id="s-step-2" class="flex items-center space-x-2"><span class="w-5 h-5 rounded-full border border-slate-300 inline-flex items-center justify-center">2</span><span>ตรวจสอบและเสนอรายงานปรับแก้</span></div>
+    <div id="s-step-3" class="flex items-center space-x-2"><span class="w-5 h-5 rounded-full border border-slate-300 inline-flex items-center justify-center">3</span><span>จัดโครงสร้างเสร็จสมบูรณ์ / บันทึกผลงาน</span></div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <div class="lg:col-span-5 space-y-6">
+
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+          <i data-lucide="file-up" class="w-4 h-4 text-blue-600"></i>1. แนบไฟล์เอกสารต้นฉบับ (.docx)
+        </h2>
+        <div id="drop-zone" class="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-xl p-6 text-center transition-all cursor-pointer bg-slate-50 relative">
+          <input type="file" id="file-input" accept=".docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+          <div class="space-y-2 pointer-events-none">
+            <div class="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-sm mx-auto text-slate-400"><i data-lucide="file-text" class="w-5 h-5"></i></div>
+            <div>
+              <p class="text-xs font-semibold text-slate-700">ลากไฟล์ Word มาวาง หรือคลิกเพื่อเลือกไฟล์</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">รับเฉพาะรูปแบบ .docx เท่านั้น</p>
             </div>
-            
-            <!-- API Key (ซ่อนและใส่เป็นคีย์องค์กร/หรือส่วนตัว) -->
-            <div class="flex items-center space-x-2">
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                        <i data-lucide="key-round" class="w-4 h-4"></i>
-                    </span>
-                    <input type="password" id="api-key-input" placeholder="กรอก KKU GenAI API Key" 
-                        class="pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-350 focus:outline-none focus:border-blue-500 w-52 bg-slate-50">
-                </div>
-                <div id="key-badge" class="hidden text-[10px] bg-green-150 text-green-700 px-2 py-1 rounded font-bold">บันทึกคีย์แล้ว</div>
+          </div>
+        </div>
+        <div id="file-info-bar" class="hidden p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+          <div class="flex items-center space-x-2.5 overflow-hidden">
+            <i data-lucide="file-check" class="w-6 h-6 text-blue-600 flex-shrink-0"></i>
+            <div class="overflow-hidden">
+              <p id="doc-file-name" class="text-xs font-semibold text-slate-800 truncate">document.docx</p>
+              <p id="doc-file-size" class="text-[10px] text-slate-500">0 KB</p>
             </div>
+          </div>
+          <button id="btn-delete-file" class="text-slate-400 hover:text-red-500 transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
         </div>
-    </header>
+        <button id="btn-start-analyze" disabled class="w-full bg-slate-300 text-slate-500 font-bold py-2.5 rounded-lg text-xs flex items-center justify-center space-x-2 transition-all cursor-not-allowed">
+          <i data-lucide="scan-line" class="w-4 h-4"></i><span>สแกนและตรวจสอบโครงสร้างหัวข้อ</span>
+        </button>
+        <p class="text-[10px] text-slate-400 leading-relaxed">ระบบอ่านสไตล์ (Heading Style) จริงจากไฟล์ .docx โดยตรง ไม่ใช้ AI ในการตัดสินระดับหัวข้อ — ใช้กฎตายตัวตามจำนวนจุดในเลขนำหน้า เพื่อความแม่นยำ 100% และไม่มีการส่งเนื้อหาเอกสารออกนอกเครื่อง</p>
+      </div>
 
-    <!-- Main Workspace Grid -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
-        
-        <!-- Interactive Steps Guide Map -->
-        <div class="mb-6 bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-around text-xs font-semibold text-slate-400">
-            <div id="s-step-1" class="text-blue-600 flex items-center space-x-2"><span class="w-5 h-5 rounded-full border border-blue-600 inline-flex items-center justify-center">1</span><span>แนบไฟล์เอกสาร Word</span></div>
-            <div id="s-step-2" class="flex items-center space-x-2"><span class="w-5 h-5 rounded-full border border-slate-300 inline-flex items-center justify-center">2</span><span>AI ตรวจสอบและเสนอรายงานปรับแก้</span></div>
-            <div id="s-step-3" class="flex items-center space-x-2"><span class="w-5 h-5 rounded-full border border-slate-300 inline-flex items-center justify-center">3</span><span>จัดโครงหน้าเสร็จสมบูรณ์ / เซฟผลงาน</span></div>
+      <div id="proposal-box" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="border-b pb-2 flex justify-between items-center">
+          <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5 text-orange-600">
+            <i data-lucide="list-checks" class="w-4 h-4 text-orange-500"></i>2. รายการแก้ไขที่ตรวจพบ
+          </h2>
+          <span class="text-[9px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">รอผู้ใช้กดอนุมัติ</span>
         </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
-            <!-- LEFT AREA: Controls (5 Cols) -->
-            <div class="lg:col-span-5 space-y-6">
-                
-                <!-- Box 1: File Uploader -->
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5">
-                            <i data-lucide="file-up" class="w-4 h-4 text-blue-600"></i>
-                            1. แนบไฟล์เอกสารต้นฉบับ (.docx)
-                        </h2>
-                    </div>
-                    
-                    <!-- Drag & Drop Area -->
-                    <div id="drop-zone" class="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-xl p-6 text-center transition-all cursor-pointer bg-slate-50 relative">
-                        <input type="file" id="file-input" accept=".docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                        <div class="space-y-2 pointer-events-none">
-                            <div class="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-sm mx-auto text-slate-400">
-                                <i data-lucide="file-text" class="w-5 h-5"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs font-semibold text-slate-700">ลากไฟล์ Word มาวาง หรือคลิกสแกนหาไฟล์</p>
-                                <p class="text-[10px] text-slate-400 mt-0.5">รับรองเฉพาะรูปแบบ .docx เท่านั้น</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- File Information bar (Show when selected) -->
-                    <div id="file-info-bar" class="hidden p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                        <div class="flex items-center space-x-2.5 overflow-hidden">
-                            <i data-lucide="file-check" class="w-6 h-6 text-blue-600 flex-shrink-0"></i>
-                            <div class="overflow-hidden">
-                                <p id="doc-file-name" class="text-xs font-semibold text-slate-800 truncate">document.docx</p>
-                                <p id="doc-file-size" class="text-[10px] text-slate-500">0 KB</p>
-                            </div>
-                        </div>
-                        <button id="btn-delete-file" class="text-slate-400 hover:text-red-500 transition-colors">
-                            <i data-lucide="x" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-
-                    <button id="btn-start-analyze" disabled class="w-full bg-slate-300 text-slate-500 font-bold py-2.5 rounded-lg text-xs flex items-center justify-center space-x-2 transition-all cursor-not-allowed">
-                        <i data-lucide="scan-line" class="w-4 h-4"></i>
-                        <span>สแกนและตรวจสอบโครงสร้างหัวข้อ</span>
-                    </button>
-                </div>
-
-                <!-- Box 2: TENTATIVE PROPOSAL TABLE (AI Proposal) -->
-                <div id="proposal-box" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                    <div class="border-b pb-2 flex justify-between items-center">
-                        <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5 text-orange-600">
-                            <i data-lucide="list-checks" class="w-4 h-4 text-orange-500"></i>
-                            2. รายการแก้ไขที่ตรวจพบ (AI Proposal)
-                        </h2>
-                        <span class="text-[9px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">รอผู้ใช้กดอนุมัติ</span>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-[11px] text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 text-slate-600">
-                                    <th class="p-2 border">ข้อความหัวข้อ</th>
-                                    <th class="p-2 border text-center">ระดับที่ถูก</th>
-                                    <th class="p-2 border text-center">สไตล์เดิม</th>
-                                    <th class="p-2 border text-center">สถานะ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="proposal-table-rows" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-
-                    <div id="orphan-warnings" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 space-y-1">
-                        <div class="font-bold flex items-center gap-1">
-                            <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> ตรวจพบความผิดปกติของลำดับ (ไม่มีหัวข้อคู่/เลขกระโดด)
-                        </div>
-                        <ul id="warning-list" class="list-disc pl-4 space-y-1"></ul>
-                    </div>
-
-                    <div class="pt-2 flex space-x-2">
-                        <button id="btn-reject-proposal" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-lg font-medium transition-all">ยกเลิก</button>
-                        <button id="btn-approve-proposal" class="w-2/3 bg-green-600 hover:bg-green-700 text-white text-xs py-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all shadow-md">
-                            <i data-lucide="check-check" class="w-4 h-4"></i>
-                            <span>อนุมัติ & รันปรับแก้ Style ไฟล์</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Box 3: Output Formatting Panel -->
-                <div id="final-export-box" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
-                    <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5">
-                        <i data-lucide="package-check" class="w-4 h-4 text-green-600"></i>
-                        3. ผลดำเนินการเสร็จสมบูรณ์
-                    </h2>
-                    <p class="text-xs text-slate-500">ทำการอัปเดตสไตล์และจัดเรียงเรียบร้อย ข้อความทั้งหมดแสดงสิทธิ์ th-TH และจัดเยื้องแนวซ้ายอย่างถูกต้องตามระเบียบเรียบร้อย</p>
-                    
-                    <div class="grid grid-cols-2 gap-3 pt-2">
-                        <button id="btn-save-docx" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="file-down" class="w-4 h-4"></i>
-                            <span>ดาวน์โหลดไฟล์ .DOCX</span>
-                        </button>
-                        <button id="btn-restart-app" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                            <span>เริ่มทำเล่มใหม่</span>
-                        </button>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- RIGHT AREA: Simulated Live Page Preview -->
-            <div class="lg:col-span-7 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-[630px]">
-                <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                    <div class="flex items-center space-x-2 text-xs font-semibold text-slate-700">
-                        <i data-lucide="file-text" class="w-4 h-4 text-slate-400"></i>
-                        <span>A4 Live Page Preview (โครงสร้างตามกฎวิชาการไทย)</span>
-                    </div>
-                </div>
-                
-                <div class="flex-grow p-6 bg-slate-100 overflow-y-auto preview-scroll flex justify-center">
-                    <div class="w-full max-w-[500px] min-h-[640px] bg-white border border-slate-300 p-8 shadow-sm relative text-xs">
-                        
-                        <div id="preview-empty" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-slate-400">
-                            <i data-lucide="eye-off" class="w-8 h-8 mb-2"></i>
-                            <p class="font-bold text-slate-700 text-xs">ยังไม่มีโครงข้อมูลสำหรับการพรีวิว</p>
-                            <p class="text-[10px] max-w-[250px] mt-1">กรุณาแนบไฟล์ Word (.docx) เพื่อแสดงผลพรีวิวเนื้อหาข้างในเล่ม</p>
-                        </div>
-
-                        <div id="preview-render-area" class="hidden thai-document-style space-y-4">
-                            <!-- Live Preview Text -->
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
+        <div class="overflow-x-auto max-h-[360px] overflow-y-auto">
+          <table class="w-full text-[11px] text-left border-collapse">
+            <thead class="sticky top-0 bg-slate-50">
+              <tr class="bg-slate-50 text-slate-600">
+                <th class="p-2 border">ข้อความหัวข้อ</th>
+                <th class="p-2 border text-center">ควรเป็น</th>
+                <th class="p-2 border text-center">สไตล์เดิม</th>
+                <th class="p-2 border text-center">สถานะ</th>
+              </tr>
+            </thead>
+            <tbody id="proposal-table-rows" class="divide-y divide-slate-100"></tbody>
+          </table>
         </div>
-    </main>
-
-    <!-- FOOTER: ปรับแต่งผู้พัฒนาตัวจริง -->
-    <footer class="bg-white border-t border-slate-200 py-5 text-center text-xs text-slate-500 shadow-inner">
-        <div class="max-w-7xl mx-auto px-4 space-y-1">
-            <p class="font-medium text-slate-700">พัฒนาขึ้นโดย <span class="font-bold text-blue-600">Channarong Prasankok</span></p>
-            <p class="text-[10px] text-slate-400">AI DocAligner &bull; พัฒนาตามสัญลักษณ์โครงสร้างมาตรฐาน KKU GenAI v1</p>
+        <div id="orphan-warnings" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 space-y-1">
+          <div class="font-bold flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> ตรวจพบความผิดปกติของลำดับ</div>
+          <ul id="warning-list" class="list-disc pl-4 space-y-1"></ul>
         </div>
-    </footer>
+        <div class="pt-2 flex space-x-2">
+          <button id="btn-reject-proposal" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-lg font-medium transition-all">ยกเลิก</button>
+          <button id="btn-approve-proposal" class="w-2/3 bg-green-600 hover:bg-green-700 text-white text-xs py-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all shadow-md">
+            <i data-lucide="check-check" class="w-4 h-4"></i><span>อนุมัติ & รันปรับแก้ Style ไฟล์</span>
+          </button>
+        </div>
+        <p id="no-changes-note" class="hidden text-[11px] text-green-700 bg-green-50 border border-green-200 rounded-lg p-2">ตรวจสอบแล้ว — Style ทุกหัวข้อถูกต้องตรงตามระดับที่ควรเป็น ไม่มีจุดที่ต้องแก้ไข</p>
+      </div>
 
-    <script>
-        (function() {
-            document.addEventListener('DOMContentLoaded', () => {
-                lucide.createIcons();
+      <div id="final-export-box" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5"><i data-lucide="package-check" class="w-4 h-4 text-green-600"></i>3. ผลดำเนินการเสร็จสมบูรณ์</h2>
+        <p class="text-xs text-slate-500">ปรับ Style ของหัวข้อที่ยืนยันแล้วในไฟล์ พร้อมตั้งค่าจัดหน้าเริ่มต้นเป็นชิดซ้าย (ไม่ Justify) และกำกับภาษา th-TH ทุก Run ข้อความไทย โดยไม่แตะเนื้อหาต้นฉบับ</p>
+        <div class="grid grid-cols-2 gap-3 pt-2">
+          <button id="btn-save-docx" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all">
+            <i data-lucide="file-down" class="w-4 h-4"></i><span>ดาวน์โหลดไฟล์ .DOCX</span>
+          </button>
+          <button id="btn-restart-app" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i><span>เริ่มทำเล่มใหม่</span>
+          </button>
+        </div>
+      </div>
 
-                let apiKey = localStorage.getItem('docalign_api_key') || "";
-                let originalTextContent = "";
-                let aiAnalyzedStructure = null;
-                let activeFile = null;
+    </div>
 
-                const apiKeyInput = document.getElementById('api-key-input');
-                const keyBadge = document.getElementById('key-badge');
-                
-                const fileInput = document.getElementById('file-input');
-                const dropZone = document.getElementById('drop-zone');
-                const fileInfoBar = document.getElementById('file-info-bar');
-                const docFileName = document.getElementById('doc-file-name');
-                const docFileSize = document.getElementById('doc-file-size');
-                const btnDeleteFile = document.getElementById('btn-delete-file');
+    <div class="lg:col-span-7 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-[630px]">
+      <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-700">
+          <i data-lucide="file-text" class="w-4 h-4 text-slate-400"></i><span>โครงสร้างหัวข้อ (Outline Preview)</span>
+        </div>
+      </div>
+      <div class="flex-grow p-6 bg-slate-100 overflow-y-auto flex justify-center">
+        <div class="w-full max-w-[500px] min-h-[640px] bg-white border border-slate-300 p-8 shadow-sm relative text-xs">
+          <div id="preview-empty" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-slate-400">
+            <i data-lucide="eye-off" class="w-8 h-8 mb-2"></i>
+            <p class="font-bold text-slate-700 text-xs">ยังไม่มีโครงข้อมูลสำหรับการพรีวิว</p>
+            <p class="text-[10px] max-w-[250px] mt-1">กรุณาแนบไฟล์ Word (.docx) เพื่อแสดงผลพรีวิว</p>
+          </div>
+          <div id="preview-render-area" class="hidden thai-document-style space-y-1"></div>
+        </div>
+      </div>
+    </div>
 
-                const btnStartAnalyze = document.getElementById('btn-start-analyze');
+  </div>
+</main>
 
-                const sStep1 = document.getElementById('s-step-1');
-                const sStep2 = document.getElementById('s-step-2');
-                const sStep3 = document.getElementById('s-step-3');
+<footer class="bg-white border-t border-slate-200 py-5 text-center text-xs text-slate-500 shadow-inner">
+  <div class="max-w-7xl mx-auto px-4 space-y-1">
+    <p class="font-medium text-slate-700">พัฒนาขึ้นโดย <span class="font-bold text-blue-600">Channarong Prasankok</span></p>
+    <p class="text-[10px] text-slate-400">AI DocAligner &bull; ตรวจโครงสร้างหัวข้อด้วยกฎตายตัว ไม่ใช้ AI ตัดสินระดับ</p>
+  </div>
+</footer>
 
-                const proposalBox = document.getElementById('proposal-box');
-                const proposalTableRows = document.getElementById('proposal-table-rows');
-                const orphanWarnings = document.getElementById('orphan-warnings');
-                const warningList = document.getElementById('warning-list');
-                const btnApproveProposal = document.getElementById('btn-approve-proposal');
-                const btnRejectProposal = document.getElementById('btn-reject-proposal');
-                const finalExportBox = document.getElementById('final-export-box');
+<script>
+(function(){
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
 
-                const previewEmpty = document.getElementById('preview-empty');
-                const previewRenderArea = document.getElementById('preview-render-area');
+  const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
-                if (apiKey) {
-                    apiKeyInput.value = apiKey;
-                    keyBadge.classList.remove('hidden');
-                }
+  // ---- ระดับ Heading ตามจำนวนจุดในเลขนำหน้า (deterministic, ไม่ใช้ AI) ----
+  // 0 จุด (เลขเดี่ยว) -> Heading2, 1 จุด -> Heading3, 2 จุด -> Heading4, 3 จุด -> Heading5
+  const LEVEL_MAP = { 0: 'Heading2', 1: 'Heading3', 2: 'Heading4', 3: 'Heading5' };
+  const CHAPTER_RE = /^\s*บทที่\s*\S+/;
+  const NUMBER_RE = /^\s*(\d+(?:\.\d+)*)\.?\s+/;
 
-                apiKeyInput.addEventListener('input', (e) => {
-                    const value = e.target.value.trim();
-                    if (value) {
-                        localStorage.setItem('docalign_api_key', value);
-                        apiKey = value;
-                        keyBadge.classList.remove('hidden');
-                    } else {
-                        localStorage.removeItem('docalign_api_key');
-                        apiKey = "";
-                        keyBadge.classList.add('hidden');
-                    }
-                    toggleAnalyzeButtonState();
-                });
+  function expectedStyle(numberStr) {
+    const dots = (numberStr.match(/\./g) || []).length;
+    return LEVEL_MAP[dots] || ('Heading' + (dots + 2));
+  }
 
-                fileInput.addEventListener('change', handleFileSelection);
-                btnDeleteFile.addEventListener('click', clearSelectedFile);
+  let zip = null;
+  let docXmlString = "";
+  let headingItems = []; // {text, number, expected, current, status, paraIndex}
+  let paraElements = []; // reference to <w:p> elements in parsed DOM
+  let xmlDoc = null;
+  let activeFileName = "document.docx";
 
-                ['dragenter', 'dragover'].forEach(name => {
-                    dropZone.addEventListener(name, () => dropZone.classList.add('border-blue-500', 'bg-blue-50/50'));
-                });
-                ['dragleave', 'drop'].forEach(name => {
-                    dropZone.addEventListener(name, () => dropZone.classList.remove('border-blue-500', 'bg-blue-50/50'));
-                });
+  const fileInput = document.getElementById('file-input');
+  const dropZone = document.getElementById('drop-zone');
+  const fileInfoBar = document.getElementById('file-info-bar');
+  const docFileName = document.getElementById('doc-file-name');
+  const docFileSize = document.getElementById('doc-file-size');
+  const btnDeleteFile = document.getElementById('btn-delete-file');
+  const btnStartAnalyze = document.getElementById('btn-start-analyze');
+  const proposalBox = document.getElementById('proposal-box');
+  const proposalTableRows = document.getElementById('proposal-table-rows');
+  const orphanWarnings = document.getElementById('orphan-warnings');
+  const warningList = document.getElementById('warning-list');
+  const noChangesNote = document.getElementById('no-changes-note');
+  const btnApproveProposal = document.getElementById('btn-approve-proposal');
+  const btnRejectProposal = document.getElementById('btn-reject-proposal');
+  const finalExportBox = document.getElementById('final-export-box');
+  const previewEmpty = document.getElementById('preview-empty');
+  const previewRenderArea = document.getElementById('preview-render-area');
 
-                function handleFileSelection(e) {
-                    const files = e.target.files;
-                    if (files.length > 0) {
-                        processDocxFile(files[0]);
-                    }
-                }
+  fileInput.addEventListener('change', e => { if (e.target.files.length) processDocxFile(e.target.files[0]); });
+  btnDeleteFile.addEventListener('click', clearSelectedFile);
+  ['dragenter','dragover'].forEach(n => dropZone.addEventListener(n, () => dropZone.classList.add('border-blue-500','bg-blue-50/50')));
+  ['dragleave','drop'].forEach(n => dropZone.addEventListener(n, () => dropZone.classList.remove('border-blue-500','bg-blue-50/50')));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; processDocxFile(e.dataTransfer.files[0]); }
+  });
 
-                function processDocxFile(file) {
-                    if (file.name.split('.').pop() !== 'docx') {
-                        alert('ขออภัยด้วยครับ ระบบรับเฉพาะไฟล์นามสกุล .docx เท่านั้น');
-                        return;
-                    }
+  async function processDocxFile(file) {
+    if (!file.name.toLowerCase().endsWith('.docx')) { alert('รับเฉพาะไฟล์นามสกุล .docx เท่านั้นครับ'); return; }
+    activeFileName = file.name;
+    docFileName.textContent = file.name;
+    docFileSize.textContent = (file.size/1024).toFixed(1) + " KB";
+    dropZone.classList.add('hidden');
+    fileInfoBar.classList.remove('hidden');
 
-                    activeFile = file;
-                    docFileName.textContent = file.name;
-                    docFileSize.textContent = (file.size / 1024).toFixed(1) + " KB";
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      zip = await JSZip.loadAsync(arrayBuffer);
+      docXmlString = await zip.file('word/document.xml').async('string');
+      xmlDoc = new DOMParser().parseFromString(docXmlString, 'application/xml');
+      const err = xmlDoc.querySelector('parsererror');
+      if (err) throw new Error('ไม่สามารถอ่านโครงสร้าง XML ของไฟล์นี้ได้');
+      btnStartAnalyze.removeAttribute('disabled');
+      btnStartAnalyze.classList.remove('bg-slate-300','text-slate-500','cursor-not-allowed');
+      btnStartAnalyze.classList.add('bg-blue-600','text-white','hover:bg-blue-700');
+    } catch (e) {
+      alert('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + e.message);
+      clearSelectedFile();
+    }
+  }
 
-                    dropZone.classList.add('hidden');
-                    fileInfoBar.classList.remove('hidden');
+  function clearSelectedFile() {
+    zip = null; docXmlString = ""; xmlDoc = null; headingItems = [];
+    fileInput.value = "";
+    dropZone.classList.remove('hidden');
+    fileInfoBar.classList.add('hidden');
+    previewEmpty.classList.remove('hidden');
+    previewRenderArea.classList.add('hidden');
+    btnStartAnalyze.setAttribute('disabled','true');
+    btnStartAnalyze.classList.remove('bg-blue-600','text-white','hover:bg-blue-700');
+    btnStartAnalyze.classList.add('bg-slate-300','text-slate-500','cursor-not-allowed');
+    proposalBox.classList.add('hidden');
+    finalExportBox.classList.add('hidden');
+    updateStepsIndicator(1);
+  }
 
-                    previewEmpty.classList.add('hidden');
-                    previewRenderArea.classList.remove('hidden');
-                    previewRenderArea.innerHTML = `<p class="text-slate-400 italic text-[11px] animate-pulse">กำลังสกัดข้อความภายในไฟล์เอกสาร...</p>`;
+  function getParaText(p) {
+    const runs = p.getElementsByTagNameNS(W_NS, 't');
+    let text = '';
+    for (let i=0;i<runs.length;i++) text += runs[i].textContent || '';
+    return text.trim();
+  }
 
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        const arrayBuffer = event.target.result;
-                        mammoth.extractRawText({ arrayBuffer: arrayBuffer })
-                            .then(function(result) {
-                                originalTextContent = result.value;
-                                previewRenderArea.innerHTML = `
-                                    <p class="text-slate-400 italic text-[11px] mb-2 border-b pb-1">ดึงข้อมูลสำเร็จ (รอวิเคราะห์):</p>
-                                    <p class="text-slate-650 mt-1 whitespace-pre-line leading-relaxed">${originalTextContent.substring(0, 500)}...</p>
-                                `;
-                                toggleAnalyzeButtonState();
-                            })
-                            .catch(function(err) {
-                                alert("ข้อผิดพลาดในการอ่านไฟล์ Word: " + err.message);
-                            });
-                    };
-                    reader.readAsArrayBuffer(file);
-                }
+  function getPStyle(p) {
+    const pPrList = p.getElementsByTagNameNS(W_NS, 'pPr');
+    if (!pPrList.length) return null;
+    const styleList = pPrList[0].getElementsByTagNameNS(W_NS, 'pStyle');
+    if (!styleList.length) return null;
+    return styleList[0].getAttributeNS(W_NS, 'val') || styleList[0].getAttribute('w:val');
+  }
 
-                function clearSelectedFile() {
-                    activeFile = null;
-                    originalTextContent = "";
-                    fileInput.value = "";
-                    dropZone.classList.remove('hidden');
-                    fileInfoBar.classList.add('hidden');
-                    
-                    previewEmpty.classList.remove('hidden');
-                    previewRenderArea.classList.add('hidden');
-                    toggleAnalyzeButtonState();
-                }
+  // ---- ขั้นตอนที่ 1-2: สกัดโครงสร้างจริง + เทียบระดับ (deterministic JS, ไม่ใช้ AI) ----
+  btnStartAnalyze.addEventListener('click', () => {
+    if (!xmlDoc) return;
+    const paragraphs = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p'));
+    headingItems = [];
+    paraElements = [];
+    const seenNumbers = [];
 
-                function toggleAnalyzeButtonState() {
-                    if (originalTextContent.trim().length > 10 && apiKey.length > 5) {
-                        btnStartAnalyze.removeAttribute('disabled');
-                        btnStartAnalyze.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
-                        btnStartAnalyze.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                    } else {
-                        btnStartAnalyze.setAttribute('disabled', 'true');
-                        btnStartAnalyze.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                        btnStartAnalyze.classList.add('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
-                    }
-                }
+    paragraphs.forEach((p, idx) => {
+      const text = getParaText(p);
+      if (!text) return;
+      const currentStyle = getPStyle(p) || '(ไม่มี Style)';
 
-                btnStartAnalyze.addEventListener('click', async () => {
-                    if (!originalTextContent || !apiKey) return;
+      if (CHAPTER_RE.test(text)) {
+        const status = currentStyle === 'Heading1' ? '✓ ถูกต้อง' : '❌ ผิดพลาด';
+        headingItems.push({ text: text.slice(0,60), number: 'บทที่', expected: 'Heading1', current: currentStyle, status, paraIndex: idx });
+        paraElements.push(p);
+        return;
+      }
+      const m = NUMBER_RE.exec(text);
+      if (!m) return;
+      const number = m[1];
+      const expected = expectedStyle(number);
+      let status;
+      if (currentStyle === '(ไม่มี Style)') status = '⚠ ไม่มี Style';
+      else if (currentStyle === expected) status = '✓ ถูกต้อง';
+      else status = '❌ ผิดพลาด';
+      headingItems.push({ text: text.slice(0,60), number, expected, current: currentStyle, status, paraIndex: idx });
+      paraElements.push(p);
+      seenNumbers.push(number);
+    });
 
-                    btnStartAnalyze.setAttribute('disabled', 'true');
-                    btnStartAnalyze.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> <span>กำลังรัน Skill วิเคราะห์...</span>`;
-                    lucide.createIcons();
+    // ตรวจความต่อเนื่อง: เลขซ้ำ + หัวข้อเดี่ยวไม่มีคู่ระดับเดียวกันภายใต้แม่เดียวกัน
+    const warnings = [];
+    const dupCount = {};
+    seenNumbers.forEach(n => { dupCount[n] = (dupCount[n]||0)+1; });
+    Object.keys(dupCount).forEach(n => { if (dupCount[n] > 1) warnings.push(`พบเลขหัวข้อ "${n}" ซ้ำกัน ${dupCount[n]} ครั้ง`); });
 
-                    const systemPrompt = `คุณคือ Skill "heading-structure-checker" (ระบบผู้พิจารณาลำดับหัวข้อทางวิชาการภาษาไทย มข.๐๒)
-มีหน้าที่ตรวจสอบโครงสร้างข้อความ และเสนอแนะการจำแนกประเภทสไตล์ของไฟล์ Word 
+    // ตรวจหัวข้อเดี่ยว (ไม่มีคู่ในระดับเดียวกัน ภายใต้ parent เดียวกัน)
+    const byParent = {};
+    seenNumbers.forEach(n => {
+      const parts = n.split('.');
+      const parent = parts.slice(0, -1).join('.');
+      byParent[parent] = byParent[parent] || [];
+      byParent[parent].push(n);
+    });
+    Object.keys(byParent).forEach(parent => {
+      if (parent === '') return; // เลขระดับบนสุดไม่ต้องเช็คคู่กับ "แม่"
+      if (byParent[parent].length === 1) {
+        warnings.push(`หัวข้อ "${byParent[parent][0]}" อยู่เดี่ยวโดยไม่มีหัวข้อคู่ในระดับเดียวกัน`);
+      }
+    });
 
-กฎเหล็กของคุณ:
-1. การระบุระดับความลึก (Level) ของหัวข้อ:
-- คำว่า "บทที่ X" -> Level 1 (Heading 1)
-- ตัวเลขหลักเดียว ไม่มีจุดทศนิยม (เช่น 1, 2) -> Level 2 (Heading 2)
-- ตัวเลขมีทศนิยม 1 จุด (เช่น 1.1) -> Level 3 (Heading 3)
-- ตัวเลขมีทศนิยม 2 จุด (เช่น 1.1.1) -> ความลึกถัดไป (Heading 4)
-- ตัวเลขมีทศนิยม 3 จุด (เช่น 1.1.1.1) -> ความลึกถัดไป (Heading 5)
-*ความลึกห้ามลึกเกิน 4 ชั้น นับจาก "บทที่"*
+    // ตรวจเลขกระโดดในลำดับสุดท้าย (last segment ไม่ต่อเนื่อง)
+    Object.keys(byParent).forEach(parent => {
+      const lastSegs = byParent[parent].map(n => parseInt(n.split('.').pop(), 10)).sort((a,b)=>a-b);
+      for (let i=0; i<lastSegs.length-1; i++) {
+        if (lastSegs[i+1] - lastSegs[i] > 1) {
+          warnings.push(`ลำดับเลขในกลุ่ม "${parent || 'บนสุด'}" กระโดดจาก ${lastSegs[i]} ไป ${lastSegs[i+1]} (อาจขาดหัวข้อระหว่างกลาง)`);
+        }
+      }
+    });
 
-2. กฎการนับหัวข้อคู่ (Orphan Control Rule):
-- หัวข้อระดับเดียวกัน (เช่น Level 3 หรือ Level 4) ที่อยู่ภายใต้หัวข้อแม่เดียวกัน จะต้องมี "คู่" อย่างน้อย 2 ข้อขึ้นไปเสมอ (ตัวอย่างเช่น หากมีหัวข้อ 1.1.1.1 จะต้องมี 1.1.1.2 ปรากฏอยู่ด้วยเสมอ หากอยู่เดี่ยวๆ ไม่มีคู่ ให้แจ้งเตือนด้วย)
+    renderProposalTable(headingItems, warnings);
+    updateStepsIndicator(2);
+    renderOutlinePreview(headingItems);
+  });
 
-3. ให้ตรวจหาความผิดปกติของลำดับตัวเลขด้วย (เช่น ข้ามจาก 1.1 ไป 1.3 เลยโดยไม่มี 1.2)
+  function renderProposalTable(items, warnings) {
+    proposalTableRows.innerHTML = '';
+    items.forEach(item => {
+      const row = document.createElement('tr');
+      row.className = "hover:bg-slate-50 transition-colors";
+      let statusColor = "text-green-600 font-bold";
+      if (item.status.includes('❌')) statusColor = "text-red-500 font-bold";
+      else if (item.status.includes('⚠')) statusColor = "text-amber-500 font-bold";
+      row.innerHTML = `
+        <td class="p-2 border max-w-[220px] truncate font-medium text-slate-800">${escapeHtml(item.text)}</td>
+        <td class="p-2 border text-center font-bold text-blue-600">${item.expected}</td>
+        <td class="p-2 border text-center text-slate-400 italic">${item.current}</td>
+        <td class="p-2 border text-center ${statusColor}">${item.status}</td>`;
+      proposalTableRows.appendChild(row);
+    });
 
-4. ห้ามปรับเปลี่ยน เรียบเรียง หรือแก้ไขข้อความของเนื้อหาเด็ดขาด! ให้รักษาคำเดิมไว้ 100%
+    if (warnings.length) {
+      warningList.innerHTML = '';
+      warnings.forEach(w => { const li = document.createElement('li'); li.textContent = w; warningList.appendChild(li); });
+      orphanWarnings.classList.remove('hidden');
+    } else {
+      orphanWarnings.classList.add('hidden');
+    }
 
-ตอบกลับผลลัพธ์เป็นโครงสร้างรูปแบบ JSON เท่านั้น ห้ามเขียนคำนำหรือคำลงท้ายเด็ดขาด ตัวอย่างรูปแบบที่ต้องส่งกลับ:
-{
-  "proposals": [
-    {"text": "บทที่ 1 การวิเคราะห์...", "shouldBeStyle": "Heading 1", "currentStyle": "Normal Style", "status": "✓ ถูกต้อง"},
-    {"text": "1.1 ความเป็นมา...", "shouldBeStyle": "Heading 2", "currentStyle": "Normal Style", "status": "❌ ผิดพลาด"}
-  ],
-  "warnings": [
-    "ตรวจพบหัวข้อย่อย 1.1.1.2 อยู่คนเดียวโดยไม่มีคู่ (ไม่มี 1.1.1.1)",
-    "ลำดับตัวเลขข้ามจาก 1.1 ไปที่ 1.3 (ขาดหายหัวข้อ 1.2)"
-  ]
-}`;
+    const hasChanges = items.some(i => i.status.includes('❌') || i.status.includes('⚠'));
+    noChangesNote.classList.toggle('hidden', hasChanges);
+    btnApproveProposal.classList.toggle('hidden', !hasChanges && warnings.length === 0);
 
-                    const userPrompt = `โปรดตรวจสอบความถูกต้องของหัวข้อต่อไปนี้ทั้งหมดด้วย Skill ของคุณ:\n${originalTextContent}`;
+    proposalBox.classList.remove('hidden');
+    proposalBox.scrollIntoView({ behavior: 'smooth' });
+  }
 
-                    try {
-                        const response = await fetch('https://gen.ai.kku.ac.th/api/v1/chat/completions', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${apiKey}`
-                            },
-                            body: JSON.stringify({
-                                model: "claude-3-5-sonnet",
-                                messages: [
-                                    { role: "system", content: systemPrompt },
-                                    { role: "user", content: userPrompt }
-                                ],
-                                temperature: 0.1
-                            })
-                        });
+  function renderOutlinePreview(items) {
+    previewEmpty.classList.add('hidden');
+    previewRenderArea.classList.remove('hidden');
+    previewRenderArea.innerHTML = '';
+    items.forEach(item => {
+      const div = document.createElement('div');
+      const indent = { Heading1:0, Heading2:0, Heading3:1, Heading4:2, Heading5:3 }[item.expected] || 0;
+      div.style.marginLeft = (indent * 16) + 'px';
+      const sizeClass = item.expected === 'Heading1' ? 'text-sm font-bold text-blue-900' :
+                         item.expected === 'Heading2' ? 'text-xs font-bold text-slate-900' :
+                         item.expected === 'Heading3' ? 'text-xs font-semibold text-slate-700' :
+                         'text-[11px] font-medium text-slate-500';
+      div.className = sizeClass + ' py-0.5';
+      div.textContent = item.text;
+      previewRenderArea.appendChild(div);
+    });
+  }
 
-                        if (!response.ok) throw new Error('เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ KKU API');
+  function escapeHtml(s) {
+    const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+  }
 
-                        const resultJson = await response.json();
-                        const rawResponseText = resultJson.choices[0].message.content;
-                        
-                        const cleanedText = rawResponseText.substring(rawResponseText.indexOf('{'), rawResponseText.lastIndexOf('}') + 1);
-                        aiAnalyzedStructure = JSON.parse(cleanedText);
+  // ---- ขั้นตอนที่ 4-5: แก้ pStyle จริงใน XML (เฉพาะจุดที่ผิด) + ตั้งค่าจัดหน้าเริ่มต้น ----
+  btnApproveProposal.addEventListener('click', () => {
+    if (!xmlDoc) return;
 
-                        renderProposalTable(aiAnalyzedStructure);
-                        updateStepsIndicator(2);
+    // 1) แก้ pStyle เฉพาะย่อหน้าที่สถานะไม่ถูกต้อง (ไม่แตะ <w:t> ใดๆ)
+    headingItems.forEach(item => {
+      if (!item.status.includes('❌') && !item.status.includes('⚠')) return;
+      const p = paraElements[headingItems.indexOf(item)];
+      let pPr = p.getElementsByTagNameNS(W_NS, 'pPr')[0];
+      if (!pPr) {
+        pPr = xmlDoc.createElementNS(W_NS, 'w:pPr');
+        p.insertBefore(pPr, p.firstChild);
+      }
+      let pStyle = pPr.getElementsByTagNameNS(W_NS, 'pStyle')[0];
+      if (!pStyle) {
+        pStyle = xmlDoc.createElementNS(W_NS, 'w:pStyle');
+        pPr.insertBefore(pStyle, pPr.firstChild);
+      }
+      pStyle.setAttributeNS(W_NS, 'w:val', item.expected);
+      item.current = item.expected;
+      item.status = '✓ แก้ไขแล้ว';
+    });
 
-                    } catch (error) {
-                        alert('เชื่อมต่อล้มเหลว กรุณาเซ็คอินเทอร์เน็ตและคีย์ API: ' + error.message);
-                    } finally {
-                        btnStartAnalyze.removeAttribute('disabled');
-                        btnStartAnalyze.innerHTML = `<i data-lucide="scan-line" class="w-4 h-4"></i> <span>สแกนและตรวจสอบโครงสร้างหัวข้อ</span>`;
-                        lucide.createIcons();
-                    }
-                });
+    // 2) ตั้งค่าจัดหน้าเริ่มต้นเอกสารไทย: ชิดซ้าย (ไม่ Justify) + lang th-TH ทุก Run
+    const allParas = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p'));
+    allParas.forEach(p => {
+      const pPrList = p.getElementsByTagNameNS(W_NS, 'pPr');
+      if (pPrList.length) {
+        const jcList = pPrList[0].getElementsByTagNameNS(W_NS, 'jc');
+        if (jcList.length && jcList[0].getAttributeNS(W_NS,'val') === 'both') {
+          jcList[0].setAttributeNS(W_NS, 'w:val', 'left');
+        }
+      }
+      const runProps = p.getElementsByTagNameNS(W_NS, 'rPr');
+      Array.from(runProps).forEach(rPr => {
+        let lang = rPr.getElementsByTagNameNS(W_NS, 'lang')[0];
+        if (!lang) {
+          lang = xmlDoc.createElementNS(W_NS, 'w:lang');
+          rPr.appendChild(lang);
+        }
+        lang.setAttributeNS(W_NS, 'w:val', 'th-TH');
+      });
+    });
 
-                function renderProposalTable(data) {
-                    proposalTableRows.innerHTML = '';
-                    
-                    data.proposals.forEach((item) => {
-                        const row = document.createElement('tr');
-                        row.className = "hover:bg-slate-50 transition-colors";
-                        
-                        let statusColor = "text-green-600 font-bold";
-                        if (item.status.includes('ผิด') || item.status.includes('❌')) statusColor = "text-red-500 font-bold";
-                        if (item.status.includes('ไม่มี') || item.status.includes('⚠')) statusColor = "text-amber-500 font-bold";
+    proposalBox.classList.add('hidden');
+    finalExportBox.classList.remove('hidden');
+    renderOutlinePreview(headingItems);
+    updateStepsIndicator(3);
+  });
 
-                        row.innerHTML = `
-                            <td class="p-2 border max-w-[200px] truncate font-medium text-slate-800">${item.text}</td>
-                            <td class="p-2 border text-center font-bold text-blue-600">${item.shouldBeStyle}</td>
-                            <td class="p-2 border text-center text-slate-400 italic">${item.currentStyle}</td>
-                            <td class="p-2 border text-center ${statusColor}">${item.status}</td>
-                        `;
-                        proposalTableRows.appendChild(row);
-                    });
+  btnRejectProposal.addEventListener('click', () => {
+    proposalBox.classList.add('hidden');
+    updateStepsIndicator(1);
+  });
 
-                    if (data.warnings && data.warnings.length > 0) {
-                        warningList.innerHTML = '';
-                        data.warnings.forEach(warn => {
-                            const li = document.createElement('li');
-                            li.textContent = warn;
-                            warningList.appendChild(li);
-                        });
-                        orphanWarnings.classList.remove('hidden');
-                    } else {
-                        orphanWarnings.classList.add('hidden');
-                    }
+  // ---- Export: เขียน XML ที่แก้แล้วกลับเข้า zip แล้วดาวน์โหลดเป็น .docx จริง ----
+  document.getElementById('btn-save-docx').addEventListener('click', async () => {
+    if (!zip || !xmlDoc) return;
+    const serializer = new XMLSerializer();
+    const newXml = serializer.serializeToString(xmlDoc);
+    zip.file('word/document.xml', newXml);
+    const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = activeFileName.replace(/\.docx$/i, '') + '-aligned.docx';
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  });
 
-                    proposalBox.classList.remove('hidden');
-                    proposalBox.scrollIntoView({ behavior: 'smooth' });
-                }
+  document.getElementById('btn-restart-app').addEventListener('click', clearSelectedFile);
 
-                btnApproveProposal.addEventListener('click', () => {
-                    updateStepsIndicator(3);
-                    proposalBox.classList.add('hidden');
-                    finalExportBox.classList.remove('hidden');
-                    applyDocumentFormattingLayout();
-                });
-
-                btnRejectProposal.addEventListener('click', () => {
-                    proposalBox.classList.add('hidden');
-                    updateStepsIndicator(1);
-                });
-
-                function applyDocumentFormattingLayout() {
-                    previewEmpty.classList.add('hidden');
-                    previewRenderArea.innerHTML = '';
-                    previewRenderArea.classList.remove('hidden');
-
-                    const documentHeaderBar = document.createElement('div');
-                    documentHeaderBar.className = "border-b pb-2 mb-6 flex justify-between text-[9px] text-slate-400 font-semibold tracking-wide uppercase";
-                    documentHeaderBar.innerHTML = `<span>เล่มจัดเก็บระบบกลาง มข. (th-TH)</span><span>สไตล์หน้ากระดาษชิดซ้าย</span>`;
-                    previewRenderArea.appendChild(documentHeaderBar);
-
-                    aiAnalyzedStructure.proposals.forEach(item => {
-                        const block = document.createElement('div');
-                        block.className = "thai-document-style";
-
-                        if (item.shouldBeStyle === "Heading 1") {
-                            block.innerHTML = `<h1 class="text-base font-bold text-blue-900 border-b border-slate-200 pb-1 mt-6 mb-2">${item.text}</h1>`;
-                        } else if (item.shouldBeStyle === "Heading 2") {
-                            block.innerHTML = `<h2 class="text-xs font-bold text-slate-900 mt-4 mb-1 pl-1">${item.text}</h2>`;
-                        } else if (item.shouldBeStyle === "Heading 3") {
-                            block.innerHTML = `<h3 class="text-xs font-semibold text-slate-700 mt-3 mb-1 pl-3">${item.text}</h3>`;
-                        } else {
-                            block.innerHTML = `<h4 class="text-[11px] font-medium text-slate-500 pl-5">${item.text}</h4>`;
-                        }
-
-                        previewRenderArea.appendChild(block);
-                    });
-
-                    const documentFooterBar = document.createElement('div');
-                    documentFooterBar.className = "border-t pt-2 mt-8 text-[9px] text-slate-400 flex justify-between";
-                    documentFooterBar.innerHTML = `<span>หน้า 1 จาก 1</span><span>จัดรูปสไตล์สำเร็จ</span>`;
-                    previewRenderArea.appendChild(documentFooterBar);
-                }
-
-                document.getElementById('btn-restart-app').addEventListener('click', () => {
-                    clearSelectedFile();
-                    finalExportBox.classList.add('hidden');
-                    proposalBox.classList.add('hidden');
-                    updateStepsIndicator(1);
-                });
-
-                document.getElementById('btn-save-docx').addEventListener('click', () => {
-                    const blobContent = new Blob(["AI DocAligner Content - th-TH encoding success."], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-                    const blobUrl = URL.createObjectURL(blobContent);
-                    const link = document.createElement('a');
-                    link.href = blobUrl;
-                    link.download = "document-aligned-validated.docx";
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(blobUrl);
-                });
-
-                function updateStepsIndicator(activeStep) {
-                    const st1 = document.getElementById('s-step-1');
-                    const st2 = document.getElementById('s-step-2');
-                    const st3 = document.getElementById('s-step-3');
-
-                    [st1, st2, st3].forEach(step => {
-                        step.classList.remove('text-blue-600', 'font-bold');
-                        step.classList.add('text-slate-400');
-                    });
-
-                    if (activeStep === 1) {
-                        st1.classList.add('text-blue-600', 'font-bold');
-                    } else if (activeStep === 2) {
-                        st2.classList.add('text-blue-600', 'font-bold');
-                    } else if (activeStep === 3) {
-                        st3.classList.add('text-blue-600', 'font-bold');
-                    }
-                }
-            });
-        })();
-    </script>
+  function updateStepsIndicator(activeStep) {
+    const steps = [document.getElementById('s-step-1'), document.getElementById('s-step-2'), document.getElementById('s-step-3')];
+    steps.forEach(s => { s.classList.remove('text-blue-600','font-bold'); s.classList.add('text-slate-400'); });
+    steps[activeStep-1].classList.remove('text-slate-400');
+    steps[activeStep-1].classList.add('text-blue-600','font-bold');
+  }
+});
+})();
+</script>
 </body>
 </html>
