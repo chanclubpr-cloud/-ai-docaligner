@@ -67,7 +67,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
     <div class="flex items-center space-x-3">
       <div class="bg-blue-600 text-white p-2 rounded-lg"><i data-lucide="file-check-2" class="w-6 h-6"></i></div>
       <div>
-        <h1 class="font-bold text-base leading-none text-slate-900">AI DocAligner V.16</h1>
+        <h1 class="font-bold text-base leading-none text-slate-900">AI DocAligner</h1>
         <span class="text-[11px] text-slate-500">ตรวจสอบและแก้ไขลำดับชั้นหัวข้อเอกสาร Word (Heading Style)</span>
       </div>
     </div>
@@ -204,7 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---- ระดับ Heading ตามจำนวนจุดในเลขนำหน้า (deterministic, ไม่ใช้ AI) ----
   // 0 จุด (เลขเดี่ยว) -> Heading2, 1 จุด -> Heading3, 2 จุด -> Heading4, 3 จุด -> Heading5
-  const LEVEL_MAP = { 0: 'Heading2', 1: 'Heading3', 2: 'Heading4', 3: 'Heading5' };
+  // หมายเหตุ: เดิมใช้ LEVEL_MAP คงที่ (Heading2-5) แต่เปลี่ยนมาคำนวณระดับแบบไดนามิก
+  // แล้ว resolve เป็น styleId จริงของไฟล์ผ่าน resolveHeadingStyleId() แทน (ดูด้านล่าง)
   const CHAPTER_RE = /^\s*บทที่\s*\S+/;
   // ต้องมีอย่างน้อย 1 จุด (x.x) จึงถือเป็นหัวข้อจริงตามลำดับชั้นของบท
   // เลขเปล่าไม่มีจุด (1. 2. 3.) มักเป็นแค่ bullet list ย่อย ไม่ใช่หัวข้อหลัก จึงไม่รวมในการตรวจ
@@ -216,18 +217,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // บางเอกสารใช้เป็นรายการย่อยระดับลึก (เหมือน 1) 2)) — ต้องดูบริบทตำแหน่งในเอกสารประกอบ
   const BARE_NUMBER_RE = /^\s*(\d+)\.\s*/;
 
-  function expectedStyle(numberStr) {
-    const dots = (numberStr.match(/\./g) || []).length;
-    return LEVEL_MAP[dots] || ('Heading' + (dots + 2));
+  // ระดับ Heading (1-based) จากจำนวนจุด: บทที่=1, เลขเปล่า/ไม่มีจุด=2, 1จุด=3, 2จุด=4, 3จุด=5, ...
+  function levelFromDots(dots) { return dots + 2; }
+  function displayHeadingLabel(level) { return 'Heading' + level; }
+  // คืนค่า styleId "จริง" ที่ไฟล์นี้ใช้สำหรับ Heading ระดับนั้น (อ่านจาก styles.xml ตอนโหลดไฟล์)
+  // ถ้าหาไม่เจอ (ไฟล์นี้ไม่เคยมี Heading ระดับนี้มาก่อน) fallback เป็นชื่อมาตรฐาน "HeadingN"
+  function resolveHeadingStyleId(level) {
+    return headingStyleMap[level] || displayHeadingLabel(level);
   }
 
   let zip = null;
   let docXmlString = "";
-  let headingItems = []; // {text, number, expected, current, status, paraIndex}
+  let headingItems = []; // {text, number, expected, expectedStyleId, current, status, paraIndex}
   let paraElements = []; // reference to <w:p> elements in parsed DOM
   let xmlDoc = null;
   let activeFileName = "document.docx";
   let defaultTabStopTwips = 720; // ค่า Tab Stop เริ่มต้นของไฟล์ (อ่านจาก word/settings.xml ตอนโหลดไฟล์)
+  let headingStyleMap = {}; // level(1-9) -> styleId จริงของไฟล์นี้ (อ่านจาก styles.xml ตอนโหลดไฟล์)
 
   const fileInput = document.getElementById('file-input');
   const dropZone = document.getElementById('drop-zone');
@@ -288,6 +294,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (settingsErr) { /* ใช้ fallback 720 ถ้าอ่านไม่ได้ */ }
 
+      // อ่าน styles.xml เพื่อหา styleId "จริง" ของ Heading แต่ละระดับในไฟล์นี้
+      // สำคัญมาก: บางไฟล์ (โดยเฉพาะที่แปลงมาจาก Google Docs) ใช้ styleId เป็นตัวเลขล้วน
+      // เช่น "1" "2" "3" แทนที่จะเป็น "Heading1" "Heading2" ตามธรรมเนียม — ถ้าเขียนทับด้วยชื่อ
+      // มาตรฐานเฉยๆ จะกลายเป็นอ้างอิง Style ที่ไม่มีอยู่จริง ทำให้เสียรูปแบบ (ตัวหนา/ขนาด/สี) ไป
+      headingStyleMap = {};
+      try {
+        const stylesFile = zip.file('word/styles.xml');
+        if (stylesFile) {
+          const stylesXmlString = await stylesFile.async('string');
+          const stylesDoc = new DOMParser().parseFromString(stylesXmlString, 'application/xml');
+          const styleEls = Array.from(stylesDoc.getElementsByTagNameNS(W_NS, 'style'));
+          styleEls.forEach(styleEl => {
+            const type = styleEl.getAttributeNS(W_NS,'type') || styleEl.getAttribute('w:type');
+            if (type !== 'paragraph') return;
+            const styleId = styleEl.getAttributeNS(W_NS,'styleId') || styleEl.getAttribute('w:styleId');
+            if (!styleId) return;
+            let level = null;
+            // วิธีหลัก (แม่นยำสุด): ดูจาก outlineLvl ในนิยาม Style — นี่คือสิ่งที่ Word ใช้จริงในการตัดสิน
+            // ว่า Style นี้เป็นหัวข้อระดับไหน ไม่ขึ้นกับชื่อหรือ styleId เลย
+            const pPrEl = styleEl.getElementsByTagNameNS(W_NS,'pPr')[0];
+            if (pPrEl) {
+              const outlineLvlEl = pPrEl.getElementsByTagNameNS(W_NS,'outlineLvl')[0];
+              if (outlineLvlEl) {
+                const lvl = parseInt(outlineLvlEl.getAttributeNS(W_NS,'val') || outlineLvlEl.getAttribute('w:val') || '', 10);
+                if (!isNaN(lvl)) level = lvl + 1; // outlineLvl นับจาก 0 -> ระดับ Heading นับจาก 1
+              }
+            }
+            // สำรอง: ถ้าไม่มี outlineLvl ลองเทียบจากชื่อ Style ("heading 1" ฯลฯ ไม่สนตัวพิมพ์เล็ก-ใหญ่)
+            if (level === null) {
+              const nameEl = styleEl.getElementsByTagNameNS(W_NS,'name')[0];
+              const name = nameEl ? (nameEl.getAttributeNS(W_NS,'val') || nameEl.getAttribute('w:val') || '') : '';
+              const m = /^heading\s*(\d)$/i.exec(name.trim());
+              if (m) level = parseInt(m[1], 10);
+            }
+            if (level !== null && level >= 1 && level <= 9 && !(level in headingStyleMap)) {
+              headingStyleMap[level] = styleId;
+            }
+          });
+        }
+      } catch (stylesErr) { /* ถ้าอ่านไม่ได้ จะ fallback เป็นชื่อมาตรฐาน HeadingN ตอนใช้งานจริง */ }
+
       btnStartAnalyze.removeAttribute('disabled');
       btnStartAnalyze.classList.remove('bg-slate-300','text-slate-500','cursor-not-allowed');
       btnStartAnalyze.classList.add('bg-blue-600','text-white','hover:bg-blue-700');
@@ -298,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function clearSelectedFile() {
-    zip = null; docXmlString = ""; xmlDoc = null; headingItems = []; defaultTabStopTwips = 720;
+    zip = null; docXmlString = ""; xmlDoc = null; headingItems = []; defaultTabStopTwips = 720; headingStyleMap = {};
     fileInput.value = "";
     dropZone.classList.remove('hidden');
     fileInfoBar.classList.add('hidden');
@@ -636,26 +683,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const ambiguousWarnings = [];
 
     const classified = classifyDocument();
+    const missingLevels = new Set();
 
     classified.forEach(item => {
       const { p, text, kind } = item;
       const currentStyle = getPStyle(p) || '(ไม่มี Style)';
 
       if (kind === 'chapter') {
-        const status = currentStyle === 'Heading1' ? '✓ ถูกต้อง' : '❌ ผิดพลาด';
-        headingItems.push({ text: text.slice(0,60), number: 'บทที่', expected: 'Heading1', current: currentStyle, status });
+        const expectedStyleId = resolveHeadingStyleId(1);
+        if (!headingStyleMap[1]) missingLevels.add(1);
+        const status = currentStyle === expectedStyleId ? '✓ ถูกต้อง' : '❌ ผิดพลาด';
+        headingItems.push({ text: text.slice(0,60), number: 'บทที่', expected: displayHeadingLabel(1), expectedStyleId, current: currentStyle, status });
         paraElements.push(p);
         return;
       }
 
       if (kind === 'dotted' || kind === 'bareHeading') {
         const number = item.number;
-        const expected = expectedStyle(number);
+        const dots = (number.match(/\./g) || []).length;
+        const level = levelFromDots(dots);
+        const expectedStyleId = resolveHeadingStyleId(level);
+        if (!headingStyleMap[level]) missingLevels.add(level);
         let status;
         if (currentStyle === '(ไม่มี Style)') status = '⚠ ไม่มี Style';
-        else if (currentStyle === expected) status = '✓ ถูกต้อง';
+        else if (currentStyle === expectedStyleId) status = '✓ ถูกต้อง';
         else status = '❌ ผิดพลาด';
-        headingItems.push({ text: text.slice(0,60), number, expected, current: currentStyle, status });
+        headingItems.push({ text: text.slice(0,60), number, expected: displayHeadingLabel(level), expectedStyleId, current: currentStyle, status });
         paraElements.push(p);
         seenNumbers.push(number);
         return;
@@ -671,6 +724,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ตรวจความต่อเนื่อง: เลขซ้ำ + หัวข้อเดี่ยวไม่มีคู่ระดับเดียวกันภายใต้แม่เดียวกัน
     const warnings = [...ambiguousWarnings];
+    if (missingLevels.size) {
+      const levels = Array.from(missingLevels).sort((a,b)=>a-b).join(', ');
+      warnings.push(`ไฟล์นี้ไม่มี Style สำหรับ Heading ระดับ ${levels} อยู่เลย — ถ้ากดอนุมัติ ระบบจะอ้างอิงชื่อ "HeadingN" มาตรฐานแทน ซึ่งอาจไม่มีรูปแบบ (ตัวหนา/ขนาด/สี) ที่แท้จริงติดมาด้วย แนะนำให้สร้าง Style ระดับนี้ใน Word ก่อน`);
+    }
     const dupCount = {};
     seenNumbers.forEach(n => { dupCount[n] = (dupCount[n]||0)+1; });
     Object.keys(dupCount).forEach(n => { if (dupCount[n] > 1) warnings.push(`พบเลขหัวข้อ "${n}" ซ้ำกัน ${dupCount[n]} ครั้ง`); });
@@ -799,8 +856,8 @@ document.addEventListener('DOMContentLoaded', () => {
         pStyle = xmlDoc.createElementNS(W_NS, 'w:pStyle');
         pPr.insertBefore(pStyle, pPr.firstChild);
       }
-      pStyle.setAttributeNS(W_NS, 'w:val', item.expected);
-      item.current = item.expected;
+      pStyle.setAttributeNS(W_NS, 'w:val', item.expectedStyleId);
+      item.current = item.expectedStyleId;
       item.status = '✓ แก้ไขแล้ว';
     });
 
