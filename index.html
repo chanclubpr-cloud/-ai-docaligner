@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI DocAligner-ระบบจัดระดับหัวข้อเอกสารวิชาการ</title>
+<title>AI DocAligner - ระบบจัดระดับหัวข้อเอกสารวิชาการ</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -67,7 +67,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
     <div class="flex items-center space-x-3">
       <div class="bg-blue-600 text-white p-2 rounded-lg"><i data-lucide="file-check-2" class="w-6 h-6"></i></div>
       <div>
-        <h1 class="font-bold text-base leading-none text-slate-900">AI DocAligner V1.5</h1>
+        <h1 class="font-bold text-base leading-none text-slate-900">AI DocAligner V.16</h1>
         <span class="text-[11px] text-slate-500">ตรวจสอบและแก้ไขลำดับชั้นหัวข้อเอกสาร Word (Heading Style)</span>
       </div>
     </div>
@@ -227,6 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let paraElements = []; // reference to <w:p> elements in parsed DOM
   let xmlDoc = null;
   let activeFileName = "document.docx";
+  let defaultTabStopTwips = 720; // ค่า Tab Stop เริ่มต้นของไฟล์ (อ่านจาก word/settings.xml ตอนโหลดไฟล์)
 
   const fileInput = document.getElementById('file-input');
   const dropZone = document.getElementById('drop-zone');
@@ -270,6 +271,23 @@ document.addEventListener('DOMContentLoaded', () => {
       xmlDoc = new DOMParser().parseFromString(docXmlString, 'application/xml');
       const err = xmlDoc.querySelector('parsererror');
       if (err) throw new Error('ไม่สามารถอ่านโครงสร้าง XML ของไฟล์นี้ได้');
+
+      // อ่านค่า Default Tab Stop จริงของไฟล์จาก word/settings.xml (หน่วย twips)
+      // สำคัญมาก: <w:tab/> ไม่ได้เลื่อนไปชิดท้ายข้อความพอดี แต่กระโดดไปจุดหยุด Tab ถัดไปเสมอ
+      defaultTabStopTwips = 720; // ค่ามาตรฐานของ Word (0.5 นิ้ว) ใช้เป็น fallback
+      try {
+        const settingsFile = zip.file('word/settings.xml');
+        if (settingsFile) {
+          const settingsXmlString = await settingsFile.async('string');
+          const settingsDoc = new DOMParser().parseFromString(settingsXmlString, 'application/xml');
+          const tabStopEl = settingsDoc.getElementsByTagNameNS(W_NS, 'defaultTabStop')[0];
+          if (tabStopEl) {
+            const v = parseInt(tabStopEl.getAttributeNS(W_NS,'val') || tabStopEl.getAttribute('w:val') || '720', 10);
+            if (!isNaN(v) && v > 0) defaultTabStopTwips = v;
+          }
+        }
+      } catch (settingsErr) { /* ใช้ fallback 720 ถ้าอ่านไม่ได้ */ }
+
       btnStartAnalyze.removeAttribute('disabled');
       btnStartAnalyze.classList.remove('bg-slate-300','text-slate-500','cursor-not-allowed');
       btnStartAnalyze.classList.add('bg-blue-600','text-white','hover:bg-blue-700');
@@ -280,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function clearSelectedFile() {
-    zip = null; docXmlString = ""; xmlDoc = null; headingItems = [];
+    zip = null; docXmlString = ""; xmlDoc = null; headingItems = []; defaultTabStopTwips = 720;
     fileInput.value = "";
     dropZone.classList.remove('hidden');
     fileInfoBar.classList.add('hidden');
@@ -408,6 +426,15 @@ document.addEventListener('DOMContentLoaded', () => {
     return Math.round(widthPx * 15); // 1 px (96dpi) = 15 twips
   }
 
+  // <w:tab/> ไม่เลื่อนไปชิดท้ายข้อความพอดี แต่กระโดดไปยัง "จุดหยุด Tab" ถัดไปเสมอ
+  // (ทุกๆ defaultTabStopTwips จากขอบซ้าย) ต้องปัดตำแหน่งขึ้นไปที่จุดหยุดถัดไปเพื่อให้ตรงกับที่ Word เรนเดอร์จริง
+  function snapToTabStop(pos) {
+    const stop = defaultTabStopTwips || 720;
+    let idx = Math.floor(pos / stop);
+    if (idx * stop <= pos) idx++;
+    return idx * stop;
+  }
+
   function parentNumberOf(numberStr) {
     if (!numberStr || numberStr === 'บทที่') return null;
     const parts = numberStr.split('.');
@@ -423,8 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function applyStaircaseIndent() {
     if (!xmlDoc) return;
     const items = classifyDocument();
-    const indentMap = {};   // numberStr -> ตำแหน่งเลขของหัวข้อนั้น (twips)
-    const widthMap = {};    // numberStr -> ความกว้างของเลขนั้น (twips)
+    const textStartMap = {}; // numberStr -> ตำแหน่งข้อความจริงของหัวข้อนั้น หลังผ่าน Tab แล้ว (twips, ปัดเข้า tab stop แล้ว)
     let currentTextStart = BASE_INDENT_TWIPS; // ตำแหน่งข้อความของหัวข้อล่าสุดที่เจอ (anchor สำหรับ bracket/plain/bullet)
     const anomalies = [];
 
@@ -452,12 +478,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const number = item.number;
         const { family, sizePt } = getRunFont(p);
         const parentNum = parentNumberOf(number);
-        const indent = (parentNum && indentMap[parentNum] !== undefined)
-          ? indentMap[parentNum] + widthMap[parentNum]
+        const indent = (parentNum && textStartMap[parentNum] !== undefined)
+          ? textStartMap[parentNum]
           : BASE_INDENT_TWIPS;
-        indentMap[number] = indent;
-        widthMap[number] = measureTextWidthTwips(number, family, sizePt);
-        currentTextStart = indent + widthMap[number];
+        const width = measureTextWidthTwips(number, family, sizePt);
+        textStartMap[number] = snapToTabStop(indent + width);
+        currentTextStart = textStartMap[number];
         setIndent(p, indent);
         return;
       }
@@ -467,9 +493,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const number = item.number;
         const { family, sizePt } = getRunFont(p);
         const indent = BASE_INDENT_TWIPS;
-        indentMap[number] = indent;
-        widthMap[number] = measureTextWidthTwips(number + '.', family, sizePt);
-        currentTextStart = indent + widthMap[number];
+        const width = measureTextWidthTwips(number + '.', family, sizePt);
+        textStartMap[number] = snapToTabStop(indent + width);
+        currentTextStart = textStartMap[number];
         setIndent(p, indent);
         return;
       }
