@@ -105,7 +105,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
 
       <div id="final-export-box" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
         <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5"><i data-lucide="package-check" class="w-4 h-4 text-green-600"></i>3. ผลดำเนินการเสร็จสมบูรณ์</h2>
-        <p class="text-xs text-slate-500">ปรับ Style ของหัวข้อที่ยืนยันแล้วในไฟล์ พร้อมตั้งค่าจัดหน้าเริ่มต้นเป็นชิดซ้าย (ไม่ Justify) และกำกับภาษา th-TH ทุก Run ข้อความไทย โดยไม่แตะเนื้อหาต้นฉบับ</p>
+        <p class="text-xs text-slate-500">ปรับ Style ของหัวข้อที่ยืนยันแล้วในไฟล์ พร้อมจัดระยะเยื้องแบบ Staircase (คำนวณจากความกว้างจริงของเลขนำหน้าแต่ละระดับ) ตั้งค่าจัดหน้าเริ่มต้นเป็นชิดซ้าย (ไม่ Justify) และกำกับภาษา th-TH ทุก Run ข้อความไทย โดยไม่แตะเลขลำดับ สัญลักษณ์ หรือเนื้อหาต้นฉบับใดๆ ทั้งสิ้น</p>
         <div class="grid grid-cols-2 gap-3 pt-2">
           <button id="btn-save-docx" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all">
             <i data-lucide="file-down" class="w-4 h-4"></i><span>ดาวน์โหลดไฟล์ .DOCX</span>
@@ -321,6 +321,79 @@ document.addEventListener('DOMContentLoaded', () => {
     return true;
   }
 
+  // ---- Staircase Indent: เยื้องแต่ละระดับตามความกว้างจริงของเลขระดับบนหน้ามัน ----
+  // ไม่แตะเลข/สัญลักษณ์ใดๆ เลย ปรับแค่ตำแหน่งเยื้อง (w:ind) เท่านั้น
+  // วิธี: วัดความกว้างจริงของ "เลขนำหน้า" (เช่น "1.3") ด้วยฟอนต์/ขนาดจริงของหัวข้อนั้น
+  // ผ่าน canvas.measureText() แล้วใช้ค่านี้เป็น step สะสมของหัวข้อลูกที่ลึกกว่า 1 ระดับ
+  const BASE_INDENT_TWIPS = 0; // ระยะเยื้องเริ่มต้นของหัวข้อระดับบนสุด (ปรับได้ตามต้องการ)
+  const _measureCanvas = document.createElement('canvas');
+  const _measureCtx = _measureCanvas.getContext('2d');
+
+  function getRunFont(p) {
+    // หาฟอนต์ + ขนาดจริงจาก run แรกของย่อหน้า (rFonts / sz หน่วยครึ่งพอยท์)
+    const runs = Array.from(p.childNodes).filter(n => n.localName === 'r');
+    for (const r of runs) {
+      const rPr = r.getElementsByTagNameNS(W_NS, 'rPr')[0];
+      if (!rPr) continue;
+      const rFonts = rPr.getElementsByTagNameNS(W_NS, 'rFonts')[0];
+      const szEl = rPr.getElementsByTagNameNS(W_NS, 'sz')[0];
+      const family = rFonts ? (rFonts.getAttributeNS(W_NS,'ascii') || rFonts.getAttribute('w:ascii') || 'TH SarabunPSK') : 'TH SarabunPSK';
+      const halfPt = szEl ? parseInt(szEl.getAttributeNS(W_NS,'val') || szEl.getAttribute('w:val') || '32', 10) : 32;
+      return { family, sizePt: halfPt / 2 };
+    }
+    return { family: 'TH SarabunPSK', sizePt: 16 };
+  }
+
+  function measureTextWidthTwips(text, family, sizePt) {
+    const sizePx = sizePt * (96/72);
+    _measureCtx.font = `${sizePx}px "${family}", "Sarabun", sans-serif`;
+    const widthPx = _measureCtx.measureText(text).width;
+    return Math.round(widthPx * 15); // 1 px (96dpi) = 15 twips
+  }
+
+  function parentNumberOf(numberStr) {
+    if (!numberStr || numberStr === 'บทที่') return null;
+    const parts = numberStr.split('.');
+    if (parts.length <= 1) return null;
+    return parts.slice(0, -1).join('.');
+  }
+
+  // คำนวณ + ใส่ w:ind แบบ staircase ให้ทุกหัวข้อ (บรรทัดถัดไปกลับไปชิดซ้ายสุดเสมอ)
+  function applyStaircaseIndent(items, paras) {
+    const indentMap = {};
+    const widthMap = {};
+
+    items.forEach((item, i) => {
+      const p = paras[i];
+      if (item.number === 'บทที่') return; // บทที่ อยู่กึ่งกลาง ไม่เข้า staircase
+
+      const { family, sizePt } = getRunFont(p);
+      const parentNum = parentNumberOf(item.number);
+      const indent = (parentNum && indentMap[parentNum] !== undefined)
+        ? indentMap[parentNum] + widthMap[parentNum]
+        : BASE_INDENT_TWIPS;
+
+      indentMap[item.number] = indent;
+      widthMap[item.number] = measureTextWidthTwips(item.number, family, sizePt);
+
+      // ตั้ง w:ind: left=0 (บรรทัดถัดไปชิดซ้ายสุด) + firstLine=indent (บรรทัดแรกเยื้องตามระดับ)
+      let pPr = p.getElementsByTagNameNS(W_NS, 'pPr')[0];
+      if (!pPr) {
+        pPr = xmlDoc.createElementNS(W_NS, 'w:pPr');
+        p.insertBefore(pPr, p.firstChild);
+      }
+      let indEl = pPr.getElementsByTagNameNS(W_NS, 'ind')[0];
+      if (!indEl) {
+        indEl = xmlDoc.createElementNS(W_NS, 'w:ind');
+        pPr.appendChild(indEl);
+      }
+      // ล้างค่าเดิมทั้งหมด (hanging/left/firstLine เดิม) แล้วตั้งใหม่ตามกฎ staircase
+      ['w:left','w:hanging','w:firstLine','w:start'].forEach(attr => indEl.removeAttribute(attr));
+      indEl.setAttributeNS(W_NS, 'w:left', '0');
+      indEl.setAttributeNS(W_NS, 'w:firstLine', String(Math.max(indent, 0)));
+    });
+  }
+
   function getParaText(p) {
     const runs = p.getElementsByTagNameNS(W_NS, 't');
     let text = '';
@@ -505,6 +578,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1b) แก้ Tab ให้ทุกหัวข้อ (แทนที่การเว้นวรรคด้วย <w:tab/>) เพื่อให้ตำแหน่งข้อความชิดคอลัมน์เดียวกัน
     paraElements.forEach(p => normalizeNumberTab(p));
+
+    // 1c) จัดระยะเยื้องแบบ Staircase ตามความกว้างจริงของเลขระดับบนหน้ามัน (ไม่แตะเลข/สัญลักษณ์ใดๆ)
+    applyStaircaseIndent(headingItems, paraElements);
 
     // 2) ตั้งค่าจัดหน้าเริ่มต้นเอกสารไทย: ชิดซ้าย (ไม่ Justify) + lang th-TH ทุก Run
     const allParas = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p'));
