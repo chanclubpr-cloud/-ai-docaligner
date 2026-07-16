@@ -9,8 +9,55 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+/* ฟอนต์ TH Sarabun New ตัวจริง (ไม่ใช่ Google Sarabun ที่ metric ต่างกัน) โหลดจาก CDN
+   เพื่อให้ canvas.measureText() วัดความกว้างตรงกับที่ Word Desktop เรนเดอร์จริง
+   ลงทะเบียนไว้ทั้ง 2 ชื่อ เพราะไฟล์ .docx จริงมักใช้ชื่อ "TH SarabunPSK" หรือ "TH Sarabun New" ปนกัน */
+@font-face {
+  font-family: 'TH Sarabun New';
+  src: url('https://cdn.jsdelivr.net/gh/Phonbopit/sarabun-webfont@master/fonts/thsarabunnew-webfont.woff') format('woff');
+  font-weight: normal; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'TH Sarabun New';
+  src: url('https://cdn.jsdelivr.net/gh/Phonbopit/sarabun-webfont@master/fonts/thsarabunnew_bold-webfont.woff') format('woff');
+  font-weight: bold; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'TH Sarabun New';
+  src: url('https://cdn.jsdelivr.net/gh/Phonbopit/sarabun-webfont@master/fonts/thsarabunnew_italic-webfont.woff') format('woff');
+  font-weight: normal; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: 'TH Sarabun New';
+  src: url('https://cdn.jsdelivr.net/gh/Phonbopit/sarabun-webfont@master/fonts/thsarabunnew_bolditalic-webfont.woff') format('woff');
+  font-weight: bold; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: 'TH SarabunPSK';
+  src: url('https://cdn.jsdelivr.net/gh/Phonbopit/sarabun-webfont@master/fonts/thsarabunnew-webfont.woff') format('woff');
+  font-weight: normal; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'TH SarabunPSK';
+  src: url('https://cdn.jsdelivr.net/gh/Phonbopit/sarabun-webfont@master/fonts/thsarabunnew_bold-webfont.woff') format('woff');
+  font-weight: bold; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'TH SarabunPSK';
+  src: url('https://cdn.jsdelivr.net/gh/Phonbopit/sarabun-webfont@master/fonts/thsarabunnew_italic-webfont.woff') format('woff');
+  font-weight: normal; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: 'TH SarabunPSK';
+  src: url('https://cdn.jsdelivr.net/gh/Phonbopit/sarabun-webfont@master/fonts/thsarabunnew_bolditalic-webfont.woff') format('woff');
+  font-weight: bold; font-style: italic; font-display: swap;
+}
+
 body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
 .thai-document-style{text-align:left !important;word-break:break-word;line-height:1.625;}
+/* พื้นที่ซ่อนไว้เผื่อบังคับให้เบราว์เซอร์โหลดฟอนต์ก่อนเริ่มวัดความกว้างจริง */
+.font-preload{position:absolute;left:-9999px;top:-9999px;font-family:'TH Sarabun New','TH SarabunPSK';}
 </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
@@ -132,6 +179,8 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
             <p class="text-[10px] max-w-[250px] mt-1">กรุณาแนบไฟล์ Word (.docx) เพื่อแสดงผลพรีวิว</p>
           </div>
           <div id="preview-render-area" class="hidden thai-document-style space-y-1"></div>
+          <!-- บังคับให้เบราว์เซอร์โหลดฟอนต์ TH Sarabun New/PSK ไว้ล่วงหน้า สำหรับ canvas.measureText() -->
+          <span class="font-preload">1.3 ก-ฮ 0-9</span>
         </div>
       </div>
     </div>
@@ -580,7 +629,17 @@ document.addEventListener('DOMContentLoaded', () => {
     paraElements.forEach(p => normalizeNumberTab(p));
 
     // 1c) จัดระยะเยื้องแบบ Staircase ตามความกว้างจริงของเลขระดับบนหน้ามัน (ไม่แตะเลข/สัญลักษณ์ใดๆ)
-    applyStaircaseIndent(headingItems, paraElements);
+    const runStaircase = () => applyStaircaseIndent(headingItems, paraElements);
+    if (document.fonts && document.fonts.ready) {
+      // รอให้ฟอนต์ TH Sarabun New/PSK โหลดเสร็จก่อน เพื่อความแม่นยำของการวัดความกว้าง
+      Promise.all([
+        document.fonts.load('16px "TH Sarabun New"'),
+        document.fonts.load('16px "TH SarabunPSK"'),
+        document.fonts.ready
+      ]).then(runStaircase).catch(runStaircase);
+    } else {
+      runStaircase();
+    }
 
     // 2) ตั้งค่าจัดหน้าเริ่มต้นเอกสารไทย: ชิดซ้าย (ไม่ Justify) + lang th-TH ทุก Run
     const allParas = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p'));
