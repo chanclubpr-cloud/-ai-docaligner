@@ -127,7 +127,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
           </h2>
           <span class="text-[9px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">รอผู้ใช้กดอนุมัติ</span>
         </div>
-        <div class="overflow-x-auto max-h-[360px] overflow-y-auto">
+        <div class="overflow-x-auto max-h-[280px] overflow-y-auto">
           <table class="w-full text-[11px] text-left border-collapse">
             <thead class="sticky top-0 bg-slate-50">
               <tr class="bg-slate-50 text-slate-600">
@@ -141,8 +141,8 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
           </table>
         </div>
         <div id="orphan-warnings" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 space-y-1">
-          <div class="font-bold flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> ตรวจพบความผิดปกติของลำดับ</div>
-          <ul id="warning-list" class="list-disc pl-4 space-y-1"></ul>
+          <div class="font-bold flex items-center gap-1 sticky top-0 bg-amber-50 pb-1"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> ตรวจพบความผิดปกติของลำดับ <span id="warning-count" class="font-normal text-amber-600"></span></div>
+          <ul id="warning-list" class="list-disc pl-4 space-y-1 max-h-[220px] overflow-y-auto pr-1"></ul>
         </div>
         <div class="pt-2 flex space-x-2">
           <button id="btn-reject-proposal" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-lg font-medium transition-all">ยกเลิก</button>
@@ -682,8 +682,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!xmlDoc) return;
     headingItems = [];
     paraElements = [];
-    const seenNumbers = [];
+    const seenNumbers = []; // {number, chapterIndex}
     const ambiguousWarnings = [];
+    let chapterIndex = 0; // เพิ่มทุกครั้งที่เจอ "บทที่ x" ใหม่ ใช้แยกขอบเขตการตรวจซ้ำ/กระโดด ไม่ให้ปนกันข้ามบท
 
     const classified = classifyDocument();
     const missingLevels = new Set();
@@ -693,6 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const currentStyle = getPStyle(p) || '(ไม่มี Style)';
 
       if (kind === 'chapter') {
+        chapterIndex++;
         const expectedStyleId = resolveHeadingStyleId(1);
         if (!headingStyleMap[1]) missingLevels.add(1);
         const status = currentStyle === expectedStyleId ? '✓ ถูกต้อง' : '❌ ผิดพลาด';
@@ -713,7 +715,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else status = '❌ ผิดพลาด';
         headingItems.push({ text: text.slice(0,60), number, expected: displayHeadingLabel(level), expectedStyleId, current: currentStyle, status });
         paraElements.push(p);
-        seenNumbers.push(number);
+        seenNumbers.push({ number, chapterIndex });
         return;
       }
 
@@ -732,27 +734,38 @@ document.addEventListener('DOMContentLoaded', () => {
       warnings.push(`ไฟล์นี้ไม่มี Style สำหรับ Heading ระดับ ${levels} อยู่เลย — ถ้ากดอนุมัติ ระบบจะอ้างอิงชื่อ "HeadingN" มาตรฐานแทน ซึ่งอาจไม่มีรูปแบบ (ตัวหนา/ขนาด/สี) ที่แท้จริงติดมาด้วย แนะนำให้สร้าง Style ระดับนี้ใน Word ก่อน`);
     }
     const dupCount = {};
-    seenNumbers.forEach(n => { dupCount[n] = (dupCount[n]||0)+1; });
-    Object.keys(dupCount).forEach(n => { if (dupCount[n] > 1) warnings.push(`พบเลขหัวข้อ "${n}" ซ้ำกัน ${dupCount[n]} ครั้ง`); });
-
-    // ตรวจหัวข้อเดี่ยว (ไม่มีคู่ในระดับเดียวกัน ภายใต้ parent เดียวกัน)
-    const byParent = {};
-    seenNumbers.forEach(n => {
-      const parts = n.split('.');
-      const parent = parts.slice(0, -1).join('.');
-      byParent[parent] = byParent[parent] || [];
-      byParent[parent].push(n);
+    seenNumbers.forEach(({number, chapterIndex}) => {
+      const key = chapterIndex + '::' + number;
+      dupCount[key] = (dupCount[key]||0)+1;
     });
-    Object.keys(byParent).forEach(parent => {
-      if (parent === '') return; // เลขระดับบนสุดไม่ต้องเช็คคู่กับ "แม่"
-      if (byParent[parent].length === 1) {
-        warnings.push(`หัวข้อ "${byParent[parent][0]}" อยู่เดี่ยวโดยไม่มีหัวข้อคู่ในระดับเดียวกัน`);
+    Object.keys(dupCount).forEach(key => {
+      if (dupCount[key] > 1) {
+        const [ch, n] = key.split('::');
+        warnings.push(`พบเลขหัวข้อ "${n}" ซ้ำกัน ${dupCount[key]} ครั้งภายในบทเดียวกัน (บทที่ลำดับ ${ch})`);
       }
     });
 
-    // ตรวจเลขกระโดดในลำดับสุดท้าย (last segment ไม่ต่อเนื่อง)
-    Object.keys(byParent).forEach(parent => {
-      const lastSegs = byParent[parent].map(n => parseInt(n.split('.').pop(), 10)).sort((a,b)=>a-b);
+    // ตรวจหัวข้อเดี่ยว (ไม่มีคู่ในระดับเดียวกัน ภายใต้ parent เดียวกัน) — สโคปแยกตามบท
+    const byParent = {};
+    seenNumbers.forEach(({number, chapterIndex}) => {
+      const parts = number.split('.');
+      const parent = parts.slice(0, -1).join('.');
+      const key = chapterIndex + '::' + parent;
+      byParent[key] = byParent[key] || [];
+      byParent[key].push(number);
+    });
+    Object.keys(byParent).forEach(key => {
+      const parent = key.split('::')[1];
+      if (parent === '') return; // เลขระดับบนสุดไม่ต้องเช็คคู่กับ "แม่"
+      if (byParent[key].length === 1) {
+        warnings.push(`หัวข้อ "${byParent[key][0]}" อยู่เดี่ยวโดยไม่มีหัวข้อคู่ในระดับเดียวกัน (ภายในบทเดียวกัน)`);
+      }
+    });
+
+    // ตรวจเลขกระโดดในลำดับสุดท้าย (last segment ไม่ต่อเนื่อง) — สโคปแยกตามบท
+    Object.keys(byParent).forEach(key => {
+      const parent = key.split('::')[1];
+      const lastSegs = byParent[key].map(n => parseInt(n.split('.').pop(), 10)).sort((a,b)=>a-b);
       for (let i=0; i<lastSegs.length-1; i++) {
         if (lastSegs[i+1] - lastSegs[i] > 1) {
           warnings.push(`ลำดับเลขในกลุ่ม "${parent || 'บนสุด'}" กระโดดจาก ${lastSegs[i]} ไป ${lastSegs[i+1]} (อาจขาดหัวข้อระหว่างกลาง)`);
@@ -806,6 +819,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (warnings.length) {
       warningList.innerHTML = '';
       warnings.forEach(w => { const li = document.createElement('li'); li.textContent = w; warningList.appendChild(li); });
+      const countEl = document.getElementById('warning-count');
+      if (countEl) countEl.textContent = `(${warnings.length} รายการ)`;
       orphanWarnings.classList.remove('hidden');
     } else {
       orphanWarnings.classList.add('hidden');
