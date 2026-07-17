@@ -67,7 +67,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
     <div class="flex items-center space-x-3">
       <div class="bg-blue-600 text-white p-2 rounded-lg"><i data-lucide="file-check-2" class="w-6 h-6"></i></div>
       <div>
-        <h1 class="font-bold text-base leading-none text-slate-900">AI DocAligner Version 1.7</h1>
+        <h1 class="font-bold text-base leading-none text-slate-900">AI DocAligner Version 1.8</h1>
         <span class="text-[11px] text-slate-500">ตรวจสอบและแก้ไขลำดับชั้นหัวข้อเอกสาร Word (Heading Style)</span>
       </div>
     </div>
@@ -149,7 +149,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
         </button>
         <p class="text-[10px] text-slate-400 leading-relaxed">ระบบอ่านสไตล์ (Heading Style) จริงจากไฟล์ .docx โดยตรง ไม่ใช้ AI ในการตัดสินระดับหัวข้อ — ใช้กฎตายตัวตามจำนวนจุดในเลขนำหน้า เพื่อความแม่นยำ 100% และไม่มีการส่งเนื้อหาเอกสารออกนอกเครื่อง</p>
         <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[10px] text-amber-800 leading-relaxed">
-          <span class="font-bold">⚠ คำเตือน:</span> ระบบจะแปลงย่อหน้า <span class="font-semibold">ทุกจุดในเล่ม</span> ที่จัดแบบ "กระจาย/Justify" (ทั้ง Both และ Thai Distribute) ให้เป็น <span class="font-semibold">ชิดซ้าย</span> เหมือนกันหมด ไม่แยกว่าจุดไหนตั้งใจจัดกระจายไว้ — รูปแบบที่จะได้ผลลัพธ์ดีที่สุดคือเอกสารที่ <span class="font-semibold">ใช้ชิดซ้ายเป็นหลักอยู่แล้วทั้งเล่ม</span> (ไม่ผสมกระจาย/ชิดซ้ายปนกันโดยตั้งใจ) เพราะภาษาไทยเมื่อจัดกระจายมักมีปัญหาระยะห่างตัวอักษรไม่สม่ำเสมออยู่แล้ว
+          <span class="font-bold">⚠ คำเตือน:</span> ในขั้นตอนที่ 2 จะมี<span class="font-semibold">ตัวเลือกให้กดเลือกเอง</span>สำหรับแปลงย่อหน้าที่จัดแบบ "กระจาย/Justify" (ทั้ง Both และ Thai Distribute) ให้เป็น <span class="font-semibold">ชิดซ้าย</span> — ค่าเริ่มต้นจะ<span class="font-semibold">ไม่แตะ</span>จนกว่าคุณจะติ๊กเลือก เพราะภาษาไทยเมื่อจัดกระจายมักมีปัญหาระยะห่างตัวอักษรไม่สม่ำเสมอ จึงมีตัวเลือกนี้ไว้ให้ปรับเฉพาะเมื่อจำเป็น
         </div>
       </div>
 
@@ -177,10 +177,26 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
           <div class="font-bold flex items-center gap-1 sticky top-0 bg-amber-50 pb-1"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> ตรวจพบความผิดปกติของลำดับ <span id="warning-count" class="font-normal text-amber-600"></span></div>
           <ul id="warning-list" class="list-disc pl-4 space-y-1 max-h-[220px] overflow-y-auto pr-1"></ul>
         </div>
+        <fieldset class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-[11px] text-slate-700 space-y-2">
+          <legend class="px-1 font-bold text-blue-900">ขอบเขตการปรับแก้</legend>
+          <p class="text-slate-600">ค่าเริ่มต้นจะแก้เฉพาะ Style ของหัวข้อที่ตรวจพบ และกำกับภาษา th-TH ให้ข้อความไทย (ไม่กระทบเนื้อหา/รูปแบบ) เพื่อป้องกันการเปลี่ยนเนื้อหาโดยไม่ตั้งใจ</p>
+          <label class="flex items-start gap-2 cursor-pointer">
+            <input id="opt-fix-tabs" type="checkbox" class="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+            <span><b>จัด Tab หลังเลขหัวข้อและรายการ</b> — ใช้เมื่อเอกสารพิมพ์เว้นวรรคไม่สม่ำเสมอ</span>
+          </label>
+          <label class="flex items-start gap-2 cursor-pointer">
+            <input id="opt-staircase" type="checkbox" class="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+            <span><b>จัดระยะเยื้องแบบ Staircase</b> — ปรับทุกย่อหน้าที่อยู่นอกตาราง</span>
+          </label>
+          <label class="flex items-start gap-2 cursor-pointer">
+            <input id="opt-left-align" type="checkbox" class="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+            <span><b>เปลี่ยนการกระจายข้อความเป็นชิดซ้าย</b> — เหมาะเมื่อเอกสารไทยมีช่องไฟระหว่างอักษรผิดปกติ</span>
+          </label>
+        </fieldset>
         <div class="pt-2 flex space-x-2">
           <button id="btn-reject-proposal" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-lg font-medium transition-all">ยกเลิก</button>
           <button id="btn-approve-proposal" class="w-2/3 bg-green-600 hover:bg-green-700 text-white text-xs py-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all shadow-md">
-            <i data-lucide="check-check" class="w-4 h-4"></i><span>อนุมัติ & รันปรับแก้ Style ไฟล์</span>
+            <i data-lucide="check-check" class="w-4 h-4"></i><span>สร้างไฟล์ฉบับปรับปรุง</span>
           </button>
         </div>
         <p id="no-changes-note" class="hidden text-[11px] text-green-700 bg-green-50 border border-green-200 rounded-lg p-2">ตรวจสอบแล้ว — Style ทุกหัวข้อถูกต้องตรงตามระดับที่ควรเป็น ไม่มีจุดที่ต้องแก้ไข</p>
@@ -188,7 +204,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
 
       <div id="final-export-box" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
         <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5"><i data-lucide="package-check" class="w-4 h-4 text-green-600"></i>3. ผลดำเนินการเสร็จสมบูรณ์</h2>
-        <p class="text-xs text-slate-500">ปรับ Style ของหัวข้อที่ยืนยันแล้วในไฟล์ พร้อมจัดระยะเยื้องแบบ Staircase (คำนวณจากความกว้างจริงของเลขนำหน้าแต่ละระดับ) ตั้งค่าจัดหน้าเริ่มต้นเป็นชิดซ้าย (ไม่ Justify) และกำกับภาษา th-TH ทุก Run ข้อความไทย โดยไม่แตะเลขลำดับ สัญลักษณ์ หรือเนื้อหาต้นฉบับใดๆ ทั้งสิ้น</p>
+        <p class="text-xs text-slate-500">สร้างไฟล์ใหม่จากต้นฉบับเดิมแล้ว การปรับเพิ่มเติมจะทำเฉพาะรายการที่เลือกไว้ในขั้นตอนก่อนหน้า โปรดเปิดตรวจใน Microsoft Word ก่อนส่งเข้าระบบ</p>
         <div class="grid grid-cols-2 gap-3 pt-2">
           <button id="btn-save-docx" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all">
             <i data-lucide="file-down" class="w-4 h-4"></i><span>ดาวน์โหลดไฟล์ .DOCX</span>
@@ -294,6 +310,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnApproveProposal = document.getElementById('btn-approve-proposal');
   const btnRejectProposal = document.getElementById('btn-reject-proposal');
   const finalExportBox = document.getElementById('final-export-box');
+  const optFixTabs = document.getElementById('opt-fix-tabs');
+  const optStaircase = document.getElementById('opt-staircase');
+  const optLeftAlign = document.getElementById('opt-left-align');
   const previewEmpty = document.getElementById('preview-empty');
   const previewRenderArea = document.getElementById('preview-render-area');
 
@@ -391,6 +410,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function clearSelectedFile() {
     zip = null; docXmlString = ""; xmlDoc = null; headingItems = []; defaultTabStopTwips = 720; headingStyleMap = {};
     fileInput.value = "";
+    optFixTabs.checked = false;
+    optStaircase.checked = false;
+    optLeftAlign.checked = false;
     dropZone.classList.remove('hidden');
     fileInfoBar.classList.add('hidden');
     previewEmpty.classList.remove('hidden');
@@ -407,6 +429,27 @@ document.addEventListener('DOMContentLoaded', () => {
   // ในทางปฏิบัติแต่ละคนพิมพ์ไม่เหมือนกัน: บางคนกด Tab, บางคนเว้นวรรค, บางคนพิมพ์ติดกันเลย
   // ฟังก์ชันนี้จึงตรวจจากเนื้อหาจริงของทั้งย่อหน้า (ไม่สนใจว่าเดิมคั่นด้วยอะไร)
   // แล้ว "รีเซ็ต" ให้เป็น Tab เดียวกันทุกหัวข้อเสมอ
+  // ---- ลบ Tab เดี่ยวๆ ที่ค้างอยู่ "หน้า" ตัวเลขหัวข้อ (ก่อนเจอเนื้อหาจริงตัวแรก) ----
+  // พบจริงจากไฟล์ทดสอบ: ผู้เขียนบางคนกด Tab เพื่อดันตำแหน่งตัวเลขให้เยื้องเองด้วยมือ
+  // (เช่น กด Tab 1 ครั้งก่อนพิมพ์ "3.1", กด Tab 2 ครั้งก่อนพิมพ์ "3.1.1" ตามความลึก)
+  // พอระบบมาคำนวณ w:ind ให้ใหม่ ตัว Tab เดิมที่ค้างอยู่จะไปบวกซ้อนกับ Staircase Indent ที่คำนวณใหม่
+  // ทำให้เยื้องเกินไปกว่าที่ควร ต้องเคลียร์ Tab ที่ค้างอยู่หน้าตัวเลขออกก่อนเสมอ
+  function stripLeadingStrayTabs(p) {
+    const runs = Array.from(p.childNodes).filter(n => n.localName === 'r');
+    let removed = false;
+    for (const r of runs) {
+      const tNodes = r.getElementsByTagNameNS(W_NS, 't');
+      const hasText = Array.from(tNodes).some(t => (t.textContent || '').length > 0);
+      if (hasText) break; // เจอเนื้อหาจริง (เลขหรือข้อความ) แล้ว หยุดลบทันที ไม่แตะอะไรหลังจากนี้
+      const tabNodes = r.getElementsByTagNameNS(W_NS, 'tab');
+      if (tabNodes.length > 0) {
+        r.parentNode.removeChild(r);
+        removed = true;
+      }
+    }
+    return removed;
+  }
+
   function normalizeNumberTab(p) {
     const runs = Array.from(p.childNodes).filter(n => n.localName === 'r');
     if (!runs.length) return false;
@@ -913,12 +956,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---- ขั้นตอนที่ 4-5: แก้ pStyle จริงใน XML (เฉพาะจุดที่ผิด) + ตั้งค่าจัดหน้าเริ่มต้น ----
-  btnApproveProposal.addEventListener('click', () => {
+  btnApproveProposal.addEventListener('click', async () => {
     if (!xmlDoc) return;
+    btnApproveProposal.disabled = true;
+    btnApproveProposal.classList.add('opacity-60','cursor-wait');
+    const originalButtonText = btnApproveProposal.querySelector('span').textContent;
+    btnApproveProposal.querySelector('span').textContent = 'กำลังสร้างไฟล์ฉบับปรับปรุง…';
 
-    // 1) แก้ pStyle เฉพาะย่อหน้าที่สถานะไม่ถูกต้อง (ไม่แตะ <w:t> ใดๆ)
-    headingItems.forEach(item => {
+    try {
+      // 1) แก้ pStyle เฉพาะย่อหน้าที่สถานะไม่ถูกต้อง (ไม่แตะ <w:t> ใดๆ)
+      // หากไฟล์ไม่มี Style ระดับนั้นจริง จะไม่สร้าง reference ที่อาจทำให้รูปแบบ Word เพี้ยน
+      const skippedStyleItems = [];
+      headingItems.forEach(item => {
       if (!item.status.includes('❌') && !item.status.includes('⚠')) return;
+      const level = Number(item.expected.replace('Heading', ''));
+      if (!headingStyleMap[level]) {
+        skippedStyleItems.push(item.text);
+        return;
+      }
       const p = paraElements[headingItems.indexOf(item)];
       let pPr = p.getElementsByTagNameNS(W_NS, 'pPr')[0];
       if (!pPr) {
@@ -933,10 +988,15 @@ document.addEventListener('DOMContentLoaded', () => {
       pStyle.setAttributeNS(W_NS, 'w:val', item.expectedStyleId);
       item.current = item.expectedStyleId;
       item.status = '✓ แก้ไขแล้ว';
-    });
+      });
 
-    // 1b) แก้ Tab ให้ทุกหัวข้อ/รายการ (แทนที่การเว้นวรรคด้วย <w:tab/>) รวมถึงแบบ 1) 2) ด้วย
-    Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p')).filter(p => !isInsideTable(p)).forEach(p => normalizeNumberTab(p));
+      // 1b) การปรับ Tab เป็นตัวเลือก เพราะมีผลกับทุกย่อหน้าที่อยู่นอกตาราง
+      if (optFixTabs.checked) {
+        Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p')).filter(p => !isInsideTable(p)).forEach(p => {
+          stripLeadingStrayTabs(p);
+          normalizeNumberTab(p);
+        });
+      }
 
     // 1c) จัดระยะเยื้องแบบ Staircase ทั้งเอกสาร (หัวข้อจุด + รายการวงเล็บ 1)2) + ย่อหน้าเนื้อหา) ไม่แตะเลข/สัญลักษณ์ใดๆ
     const runStaircase = () => {
@@ -950,23 +1010,27 @@ document.addEventListener('DOMContentLoaded', () => {
         box.appendChild(note);
       }
     };
-    if (document.fonts && document.fonts.ready) {
-      // รอให้ฟอนต์ TH Sarabun New/PSK โหลดเสร็จก่อน เพื่อความแม่นยำของการวัดความกว้าง
-      Promise.all([
-        document.fonts.load('16px "TH Sarabun New"'),
-        document.fonts.load('16px "TH SarabunPSK"'),
-        document.fonts.ready
-      ]).then(runStaircase).catch(runStaircase);
-    } else {
-      runStaircase();
-    }
+      // รอฟอนต์และคำนวณให้เสร็จก่อนปลดปุ่มดาวน์โหลด เพื่อไม่ให้ได้ไฟล์ที่จัดระยะไม่ครบ
+      if (optStaircase.checked) {
+        if (document.fonts && document.fonts.ready) {
+          try {
+            await Promise.all([
+              document.fonts.load('16px "TH Sarabun New"'),
+              document.fonts.load('16px "TH SarabunPSK"'),
+              document.fonts.ready
+            ]);
+          } catch (_) { /* ใช้ฟอนต์ที่มีอยู่และดำเนินการต่อ */ }
+        }
+        runStaircase();
+      }
 
     // 2) ตั้งค่าจัดหน้าเริ่มต้นเอกสารไทย: ชิดซ้าย (ไม่ Justify) + lang th-TH ทุก Run
     // สำคัญ: ต้องแก้ทั้ง jc="both" (Justify ปกติ) และ jc="thaiDistribute"/"distribute"
     // (Justify แบบกระจายแถวของไทย/CJK) เพราะทั้งคู่ทำให้ระยะห่างตัวอักษรไม่สม่ำเสมอเหมือนกัน
-    const JUSTIFY_VALUES_TO_FIX = ['both', 'thaiDistribute', 'distribute'];
-    const allParas = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p')).filter(p => !isInsideTable(p));
-    allParas.forEach(p => {
+      const JUSTIFY_VALUES_TO_FIX = ['both', 'thaiDistribute', 'distribute'];
+      const allParas = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p')).filter(p => !isInsideTable(p));
+      allParas.forEach(p => {
+      if (optLeftAlign.checked) {
       const pPrList = p.getElementsByTagNameNS(W_NS, 'pPr');
       if (pPrList.length) {
         const jcList = pPrList[0].getElementsByTagNameNS(W_NS, 'jc');
@@ -977,6 +1041,9 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       }
+      }
+      // การกำกับภาษา th-TH ไม่กระทบเนื้อหา/รูปแบบใดๆ (แค่บอก Word ให้ใช้เอนจินภาษาไทยถูกต้อง)
+      // จึงทำงานเสมอ ไม่ผูกกับ checkbox ชิดซ้าย ต่างจากการแก้ jc ที่เปลี่ยนรูปลักษณ์เอกสารจริง
       const runProps = p.getElementsByTagNameNS(W_NS, 'rPr');
       Array.from(runProps).forEach(rPr => {
         let lang = rPr.getElementsByTagNameNS(W_NS, 'lang')[0];
@@ -986,12 +1053,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         lang.setAttributeNS(W_NS, 'w:val', 'th-TH');
       });
-    });
+      });
 
-    proposalBox.classList.add('hidden');
-    finalExportBox.classList.remove('hidden');
-    renderOutlinePreview(headingItems);
-    updateStepsIndicator(3);
+      if (skippedStyleItems.length) {
+        const box = document.getElementById('final-export-box');
+        const note = document.createElement('div');
+        note.className = 'p-3 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800';
+        note.textContent = `ไม่ได้แก้ ${skippedStyleItems.length} หัวข้อ เพราะไฟล์ต้นฉบับไม่มี Heading Style ที่ต้องใช้ โปรดสร้าง Style ใน Word ก่อนแล้วสแกนใหม่`;
+        box.appendChild(note);
+      }
+
+      proposalBox.classList.add('hidden');
+      finalExportBox.classList.remove('hidden');
+      renderOutlinePreview(headingItems);
+      updateStepsIndicator(3);
+    } catch (error) {
+      alert('ไม่สามารถสร้างไฟล์ฉบับปรับปรุงได้: ' + error.message);
+      btnApproveProposal.disabled = false;
+      btnApproveProposal.classList.remove('opacity-60','cursor-wait');
+      btnApproveProposal.querySelector('span').textContent = originalButtonText;
+    }
   });
 
   btnRejectProposal.addEventListener('click', () => {
