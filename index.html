@@ -77,6 +77,39 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
 
+  <!-- คำแนะนำการใช้งาน: รูปแบบเอกสารที่จะได้ผลลัพธ์ดีที่สุด -->
+  <div class="mb-6 bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
+    <h2 class="font-bold text-base text-blue-900 flex items-center gap-2 mb-3">
+      <i data-lucide="lightbulb" class="w-5 h-5 text-blue-600"></i>
+      คำแนะนำ: เอกสารแบบไหนจะได้ผลลัพธ์ดีที่สุด
+    </h2>
+    <p class="text-xs text-blue-900 leading-relaxed mb-4">
+      ระบบจะจัดเรียงได้แม่นยำที่สุด เมื่อเอกสารของพี่มีองค์ประกอบเหล่านี้ <span class="font-bold">ชัดเจน แยกจากกัน ไม่ปนกัน</span>:
+      &nbsp;<span class="inline-block bg-white border border-blue-300 rounded px-2 py-0.5 font-semibold text-blue-700 mt-1">1. บทที่ x</span>
+      &nbsp;<span class="inline-block bg-white border border-blue-300 rounded px-2 py-0.5 font-semibold text-blue-700 mt-1">2. หัวข้อจุด (x.x, x.x.x)</span>
+      &nbsp;<span class="inline-block bg-white border border-blue-300 rounded px-2 py-0.5 font-semibold text-blue-700 mt-1">3. รายการวงเล็บ (1), 1.1))</span>
+      &nbsp;<span class="inline-block bg-white border border-blue-300 rounded px-2 py-0.5 font-semibold text-blue-700 mt-1">4. ย่อหน้าเนื้อหา ที่ชัดเจน</span>
+    </p>
+
+    <div class="bg-white border border-blue-200 rounded-lg p-4 text-[12px] leading-relaxed font-mono overflow-x-auto">
+      <div class="text-center font-bold text-slate-800">บทที่ x</div>
+      <div class="text-center text-slate-500 mb-2">ชื่อบท...........</div>
+      <div class="text-slate-800"><span class="font-bold text-blue-700">x.1</span>&nbsp;&nbsp;ข้อความมม มมมมมมมมมมมมมมมมมมมมม</div>
+      <div class="text-slate-800">มมมมมมมมมมมมมมมมมมมมมมมมมมมมมมมมมม <span class="text-slate-400">(บรรทัด 2 ชิดซ้ายสุด)</span></div>
+      <div class="text-slate-800 pl-6"><span class="font-bold text-blue-700">x.1.1</span>&nbsp;&nbsp;ข้อความมม มมมมมมมมมมมมมมมม</div>
+      <div class="text-slate-800 pl-12"><span class="font-bold text-emerald-700">1)</span>&nbsp;&nbsp;ข้อความมม มมมมมมมมมมมมมม</div>
+      <div class="text-slate-800 pl-16"><span class="font-bold text-emerald-700">1.1)</span>&nbsp;&nbsp;ข้อความมม มมมมมมมมมมม</div>
+      <div class="text-slate-800 pl-6"><span class="font-bold text-blue-700">x.1.2</span>&nbsp;&nbsp;ข้อความมม มมมมมมมมมมมมมมมมม</div>
+      <div class="text-slate-800">มมมมมมมมมมมมมมมมมมมมมมมมมมมมมมมม</div>
+    </div>
+
+    <ul class="text-[11px] text-blue-800 mt-3 space-y-1 list-disc pl-4">
+      <li><span class="font-semibold">หัวข้อ (บทที่ / x.x / 1) / 1.1))</span> — ระบบจะเยื้องแบบขั้นบันไดให้อัตโนมัติตามตำแหน่งจริง ไม่ต้องตั้งเยื้องเองล่วงหน้า</li>
+      <li><span class="font-semibold">ย่อหน้าเนื้อหา</span> — ควรเป็นประโยคเต็ม ไม่ใช่ตัวเลขล้วนๆ (เช่น ค่าสถิติในตาราง จะถูกแยกออกอัตโนมัติถ้าอยู่ในตารางจริง)</li>
+      <li><span class="font-semibold">เลขซ้ำกันได้ระหว่างบท</span> เช่น "4.1" ในบทที่ 3 และบทที่ 5 ไม่ใช่ปัญหา — ระบบตรวจซ้ำแยกขอบเขตตามบทให้แล้ว</li>
+    </ul>
+  </div>
+
   <div class="mb-6 bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-around text-xs font-semibold text-slate-400">
     <div id="s-step-1" class="text-blue-600 flex items-center space-x-2"><span class="w-5 h-5 rounded-full border border-blue-600 inline-flex items-center justify-center">1</span><span>แนบไฟล์เอกสาร Word</span></div>
     <div id="s-step-2" class="flex items-center space-x-2"><span class="w-5 h-5 rounded-full border border-slate-300 inline-flex items-center justify-center">2</span><span>ตรวจสอบและเสนอรายงานปรับแก้</span></div>
@@ -168,13 +201,14 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
 
     </div>
 
-    <div class="lg:col-span-7 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-[630px]">
+    <div class="lg:col-span-7 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
         <div class="flex items-center space-x-2 text-xs font-semibold text-slate-700">
           <i data-lucide="file-text" class="w-4 h-4 text-slate-400"></i><span>โครงสร้างหัวข้อ (Outline Preview)</span>
         </div>
+        <span class="text-[9px] text-slate-400">ดึงข้อความจริงจากไฟล์ที่แนบ</span>
       </div>
-      <div class="flex-grow p-6 bg-slate-100 overflow-y-auto flex justify-center">
+      <div class="flex-grow p-6 bg-slate-100 flex justify-center">
         <div class="w-full max-w-[500px] min-h-[640px] bg-white border border-slate-300 p-8 shadow-sm relative text-xs">
           <div id="preview-empty" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-slate-400">
             <i data-lucide="eye-off" class="w-8 h-8 mb-2"></i>
@@ -193,8 +227,8 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
 
 <footer class="bg-white border-t border-slate-200 py-5 text-center text-xs text-slate-500 shadow-inner">
   <div class="max-w-7xl mx-auto px-4 space-y-1">
-    <p class="font-medium text-slate-700">พัฒนาขึ้นโดย <span class="font-bold text-blue-600">Channarong Prasankok</span></p>
-    <p class="text-[10px] text-slate-400">AI DocAligner &bull; ตรวจโครงสร้างหัวข้อด้วยกฎตายตัว ไม่ใช้ AI ตัดสินระดับ</p>
+    <p class="font-medium text-slate-700">พัฒนาขึ้นโดย <span class="font-bold text-blue-600">Channarong Prasankok 2026</span></p>
+    <p class="text-[10px] text-slate-400">AI DocAligner &bull; ตรวจโครงสร้างหัวข้อด้วยกฎตายตัว ไม่ใช้ AI</p>
   </div>
 </footer>
 
@@ -214,11 +248,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // เลขเปล่าไม่มีจุด (1. 2. 3.) มักเป็นแค่ bullet list ย่อย ไม่ใช่หัวข้อหลัก จึงไม่รวมในการตรวจ
   // \s* (ไม่ใช่ \s+) ท้าย pattern เพราะในชีวิตจริงบางคนพิมพ์เลขติดกับข้อความเลย ไม่เว้นวรรค/แท็บ
   const NUMBER_RE = /^\s*(\d+\.\d+(?:\.\d+)*)\.?\s*/;
-  // รูปแบบเลขวงเล็บ เช่น 1) 2) 3) — ใช้สำหรับ Staircase Indent เท่านั้น ไม่เกี่ยวกับการตรวจ Heading Style
-  const BRACKET_RE = /^\s*(\d+)\)\s*/;
+  // รูปแบบเลขวงเล็บ เช่น 1) 2) รวมถึงแบบซ้อนลึก เช่น 1.1) 2.3) — ใช้สำหรับ Staircase Indent เท่านั้น ไม่เกี่ยวกับการตรวจ Heading Style
+  const BRACKET_RE = /^\s*(\d+(?:\.\d+)*)\)\s*/;
   // เลขเปล่า เช่น "1." "2." — ความหมายกำกวม: บางเอกสารใช้เป็นหัวข้อใหญ่ของบท (Heading2)
   // บางเอกสารใช้เป็นรายการย่อยระดับลึก (เหมือน 1) 2)) — ต้องดูบริบทตำแหน่งในเอกสารประกอบ
   const BARE_NUMBER_RE = /^\s*(\d+)\.\s*/;
+
+  // หัวข้อจริงจะมี "ข้อความชื่อหัวข้อ" ตามหลังเลขเสมอ ต่างจากค่าตัวเลขในตาราง (เช่น "67.00", "40.5")
+  // ที่ทั้งย่อหน้ามีแค่ตัวเลขล้วนๆ ไม่มีข้อความอะไรต่อท้ายเลย — ใช้เงื่อนไขนี้กันไม่ให้เข้าใจผิด
+  // ว่าค่าสถิติ/ตัวเลขข้อมูลเป็นหัวข้อ (matchLen = ความยาวของ match ทั้งหมดรวม whitespace ท้าย)
+  function hasRealHeadingText(text, matchLen) {
+    return text.slice(matchLen).trim().length > 0;
+  }
 
   // ระดับ Heading (1-based) จากจำนวนจุด: บทที่=1, เลขเปล่า/ไม่มีจุด=2, 1จุด=3, 2จุด=4, 3จุด=5, ...
   function levelFromDots(dots) { return dots + 2; }
@@ -387,12 +428,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // สำหรับ "บทที่ x" ให้กินยาวถึงจบเลข/คำที่ตามมาติดกัน แล้วเว้นช่องว่างท้ายไว้เผื่อ trim
       const cm = /^\s*บทที่\s*\S+\s*/.exec(fullText);
       if (cm) { m = cm; L = cm[0].length; }
-    } else if (NUMBER_RE.test(fullText)) {
-      const nm = NUMBER_RE.exec(fullText);
-      if (nm) { m = nm; L = nm[0].length; }
-    } else {
+    } else if (BRACKET_RE.test(fullText)) {
+      // เช็ควงเล็บก่อนเลขจุดเสมอ (1) หรือ 1.1) ) เพราะ "1.1)" ไม่ควรถูกตีความเป็นหัวข้อ "1.1"
       const bm = BRACKET_RE.exec(fullText);
       if (bm) { m = bm; L = bm[0].length; }
+    } else if (NUMBER_RE.test(fullText)) {
+      const nm = NUMBER_RE.exec(fullText);
+      if (nm && hasRealHeadingText(fullText, nm[0].length)) { m = nm; L = nm[0].length; }
     }
     if (!m || L === 0) return false;
 
@@ -522,7 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     items.forEach(item => {
       const { p, text, kind } = item;
-      if (kind === 'empty' || kind === 'chapter') return; // บทที่ อยู่กึ่งกลาง ไม่ปรับ ind และไม่ใช้เป็น anchor
+      if (kind === 'empty' || kind === 'chapter' || kind === 'table') return; // บทที่/ตาราง ไม่ปรับ ind และไม่ใช้เป็น anchor
 
       if (kind === 'dotted') {
         const number = item.number;
@@ -586,6 +628,17 @@ document.addEventListener('DOMContentLoaded', () => {
     return styleList[0].getAttributeNS(W_NS, 'val') || styleList[0].getAttribute('w:val');
   }
 
+  // ตรวจว่าย่อหน้านี้อยู่ภายในตาราง (<w:tbl>) หรือไม่ — ถ้าใช่ ระบบจะไม่แตะเลย
+  // ไม่ตรวจ Style, ไม่แทรก Tab, ไม่จัด Indent, ไม่แก้ jc/lang ใดๆ ทั้งสิ้น
+  function isInsideTable(p) {
+    let node = p.parentNode;
+    while (node) {
+      if (node.localName === 'tbl') return true;
+      node = node.parentNode;
+    }
+    return false;
+  }
+
   // อ่านตำแหน่งเยื้องบรรทัดแรก "เดิม" ของย่อหน้า (ก่อนที่ระบบจะเข้าไปแก้ w:ind) หน่วย twips
   // ใช้เป็นสัญญาณช่วยแยกแยะเลขเปล่ากำกวม: หัวข้อใหญ่มักเยื้องตื้นกว่ารายการย่อยที่ซ้อนลึก
   function getOriginalFirstLineIndent(p) {
@@ -616,6 +669,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const DEDENT_THRESHOLD = 200; // twips — เยื้องตื้นกว่าอันก่อนหน้าอย่างน้อยขนาดนี้ถึงถือว่าเป็นการ "ย่อกลับ" จริง
 
     paragraphs.forEach(p => {
+      if (isInsideTable(p)) { results.push({ p, text: getParaText(p), kind: 'table' }); return; }
       const text = getParaText(p);
       if (!text) { results.push({ p, text, kind: 'empty' }); return; }
       const originalIndent = getOriginalFirstLineIndent(p);
@@ -627,8 +681,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      // ตรวจรูปแบบวงเล็บก่อนเสมอ (1) หรือ 1.1) ) เพราะหัวข้อจุดจริงจะไม่มี ")" ต่อท้ายเลขทันที
+      // ถ้าไม่เช็คก่อน "1.1)" จะถูก NUMBER_RE ตีความผิดว่าเป็นหัวข้อ "1.1" (เจอปัญหานี้จริงจากตัวอย่างผู้ใช้)
+      const bracket = BRACKET_RE.exec(text);
+      if (bracket) { prevIndent = originalIndent; results.push({ p, text, kind: 'bracket', number: bracket[1] }); return; }
+
       const dotted = NUMBER_RE.exec(text);
-      if (dotted) {
+      if (dotted && hasRealHeadingText(text, dotted[0].length)) {
         const number = dotted[1];
         const dots = (number.match(/\./g) || []).length;
         if (dots > maxDots) maxDots = dots;
@@ -638,7 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const bare = BARE_NUMBER_RE.exec(text);
-      if (bare && !/^\d/.test(text.slice(bare[0].length))) {
+      if (bare && !/^\d/.test(text.slice(bare[0].length)) && hasRealHeadingText(text, bare[0].length)) {
         const number = bare[1];
         let kind;
         if (maxDots === 0) {
@@ -666,9 +725,6 @@ document.addEventListener('DOMContentLoaded', () => {
         results.push({ p, text, kind, number });
         return;
       }
-
-      const bracket = BRACKET_RE.exec(text);
-      if (bracket) { prevIndent = originalIndent; results.push({ p, text, kind: 'bracket', number: bracket[1] }); return; }
 
       prevIndent = originalIndent;
       results.push({ p, text, kind: 'plain' });
@@ -880,7 +936,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 1b) แก้ Tab ให้ทุกหัวข้อ/รายการ (แทนที่การเว้นวรรคด้วย <w:tab/>) รวมถึงแบบ 1) 2) ด้วย
-    Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p')).forEach(p => normalizeNumberTab(p));
+    Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p')).filter(p => !isInsideTable(p)).forEach(p => normalizeNumberTab(p));
 
     // 1c) จัดระยะเยื้องแบบ Staircase ทั้งเอกสาร (หัวข้อจุด + รายการวงเล็บ 1)2) + ย่อหน้าเนื้อหา) ไม่แตะเลข/สัญลักษณ์ใดๆ
     const runStaircase = () => {
@@ -909,7 +965,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // สำคัญ: ต้องแก้ทั้ง jc="both" (Justify ปกติ) และ jc="thaiDistribute"/"distribute"
     // (Justify แบบกระจายแถวของไทย/CJK) เพราะทั้งคู่ทำให้ระยะห่างตัวอักษรไม่สม่ำเสมอเหมือนกัน
     const JUSTIFY_VALUES_TO_FIX = ['both', 'thaiDistribute', 'distribute'];
-    const allParas = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p'));
+    const allParas = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p')).filter(p => !isInsideTable(p));
     allParas.forEach(p => {
       const pPrList = p.getElementsByTagNameNS(W_NS, 'pPr');
       if (pPrList.length) {
