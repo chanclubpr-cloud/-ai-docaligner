@@ -62,16 +62,18 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
 </head>
 <body class="min-h-screen flex flex-col justify-between">
 
-<header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+<header class="bg-white/80 backdrop-blur-md border-b border-indigo-100 sticky top-0 z-50 shadow-sm">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
     <div class="flex items-center space-x-3">
-      <div class="bg-blue-600 text-white p-2 rounded-lg"><i data-lucide="file-check-2" class="w-6 h-6"></i></div>
+      <div class="bg-gradient-to-br from-indigo-600 to-blue-500 text-white p-2 rounded-xl shadow-md"><i data-lucide="file-check-2" class="w-6 h-6"></i></div>
       <div>
-        <h1 class="font-bold text-base leading-none text-slate-900">AI DocAligner Version 1.9</h1>
-        <span class="text-[11px] text-slate-500">ตรวจสอบและแก้ไขลำดับชั้นหัวข้อเอกสาร Word (Heading Style)</span>
+        <h1 class="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-slate-700">AI DocAligner</h1>
+        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 2.0 &bull; Academic Edition</span>
       </div>
     </div>
-    <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded font-medium">ประมวลผลในเบราว์เซอร์ — ไม่ส่งไฟล์ออกเซิร์ฟเวอร์</span>
+    <span class="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold shadow-sm flex items-center gap-1">
+      <i data-lucide="shield-check" class="w-3 h-3"></i> ทำงานบนเบราว์เซอร์ 100%
+    </span>
   </div>
 </header>
 
@@ -158,6 +160,10 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
           <label class="flex items-start gap-2 cursor-pointer">
             <input id="opt-left-align" type="checkbox" class="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
             <span><b>เปลี่ยนการกระจายข้อความเป็นชิดซ้าย</b> — เหมาะเมื่อเอกสารไทยมีช่องไฟระหว่างอักษรผิดปกติ</span>
+          </label>
+          <label class="flex items-start gap-2 cursor-pointer">
+            <input id="opt-clean-spaces" type="checkbox" class="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+            <span><b>ลบเว้นวรรค/Tab ที่ค้างอยู่หน้าเลขหัวข้อ</b> — แก้เฉพาะย่อหน้าที่ตรวจพบว่าเป็นหัวข้อจริงเท่านั้น (บทที่ / x.x / วงเล็บ) ไม่แตะย่อหน้าเนื้อหาหรือตารางเด็ดขาด</span>
           </label>
         </fieldset>
         <div class="pt-2 flex space-x-2">
@@ -327,6 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const optFixTabs = document.getElementById('opt-fix-tabs');
   const optStaircase = document.getElementById('opt-staircase');
   const optLeftAlign = document.getElementById('opt-left-align');
+  const optCleanSpaces = document.getElementById('opt-clean-spaces');
   const previewEmpty = document.getElementById('preview-empty');
   const previewRenderArea = document.getElementById('preview-render-area');
 
@@ -427,6 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
     optFixTabs.checked = false;
     optStaircase.checked = false;
     optLeftAlign.checked = false;
+    optCleanSpaces.checked = false;
     dropZone.classList.remove('hidden');
     fileInfoBar.classList.add('hidden');
     previewEmpty.classList.remove('hidden');
@@ -462,6 +470,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     return removed;
+  }
+
+  // ---- ลบ "เว้นวรรค" (ตัวอักษร space จริงๆ ไม่ใช่ <w:tab/>) ที่ค้างอยู่หน้าตัวเลขหัวข้อ ----
+  // ต่างจาก stripLeadingStrayTabs ด้านบน (ลบ Tab element) — ฟังก์ชันนี้ลบ "ตัวอักษรเว้นวรรค"
+  // ที่พิมพ์ติดอยู่ในเนื้อหาก่อนเลข (เช่น กด Spacebar 5 ครั้งเพื่อดันตำแหน่งเอง แทนการกด Tab)
+  // ขอบเขตปลอดภัย: เรียกใช้เฉพาะย่อหน้าที่ classifyDocument() ตัดสินแล้วว่าเป็นหัวข้อจริง
+  // (chapter/dotted/bracket/bareHeading) เท่านั้น — ไม่แตะย่อหน้าเนื้อหาทั่วไปหรือย่อหน้าในตาราง
+  // เพราะย่อหน้าเนื้อหาบางอันอาจตั้งใจเว้นวรรคหน้าเป็น first-line indent แบบมือจริงๆ ก็ได้
+  function stripLeadingStraySpaces(p) {
+    const runs = Array.from(p.childNodes).filter(n => n.localName === 'r');
+    for (const r of runs) {
+      const tNodes = Array.from(r.getElementsByTagNameNS(W_NS, 't'));
+      const rawText = tNodes.map(t => t.textContent || '').join('');
+      if (rawText.length === 0) continue; // run ว่าง (เช่นมีแค่ tab) ข้ามไป ให้ stripLeadingStrayTabs จัดการแยกต่างหาก
+      const trimmed = rawText.replace(/^[ \t\u00A0]+/, '');
+      if (trimmed !== rawText && tNodes.length === 1) {
+        // กรณีทั่วไป: run นี้มี <w:t> เดียว แก้ตรงๆ ได้ปลอดภัย
+        tNodes[0].textContent = trimmed;
+        return true;
+      }
+      return false; // เจอเนื้อหาจริงแล้ว (ไม่ว่าจะตัดช่องว่างได้หรือไม่) หยุดที่ run แรกนี้เสมอ
+    }
+    return false;
   }
 
   function normalizeNumberTab(p) {
@@ -1010,6 +1041,13 @@ document.addEventListener('DOMContentLoaded', () => {
           stripLeadingStrayTabs(p);
           normalizeNumberTab(p);
         });
+      }
+
+      // 1b-2) ลบเว้นวรรคที่ค้างอยู่หน้าเลขหัวข้อ — สโคปเฉพาะย่อหน้าที่เป็นหัวข้อจริงเท่านั้น (ปลอดภัย ไม่แตะเนื้อหา/ตาราง)
+      if (optCleanSpaces.checked) {
+        classifyDocument()
+          .filter(item => ['chapter', 'dotted', 'bracket', 'bareHeading'].includes(item.kind))
+          .forEach(item => stripLeadingStraySpaces(item.p));
       }
 
     // 1c) จัดระยะเยื้องแบบ Staircase ทั้งเอกสาร (หัวข้อจุด + รายการวงเล็บ 1)2) + ย่อหน้าเนื้อหา) ไม่แตะเลข/สัญลักษณ์ใดๆ
