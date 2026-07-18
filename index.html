@@ -68,7 +68,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
       <div class="bg-gradient-to-br from-indigo-600 to-blue-500 text-white p-2 rounded-xl shadow-md"><i data-lucide="file-check-2" class="w-6 h-6"></i></div>
       <div>
         <h1 class="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-slate-700">AI DocAligner</h1>
-        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 2.1 &bull; Academic Edition</span>
+        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 2.3 &bull; Academic Edition</span>
       </div>
     </div>
     <span class="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold shadow-sm flex items-center gap-1">
@@ -137,8 +137,13 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
               <option value="3">Heading3</option>
               <option value="4">Heading4</option>
             </select>
+            <button type="button" id="btn-reset-offset" title="กลับไปที่ค่าที่ระบบตรวจพบจาก Style เดิมในไฟล์" class="text-[10px] text-indigo-500 hover:text-indigo-700 underline">↺ คืนค่าตามที่ระบบตรวจพบ</button>
           </label>
           <p id="offset-detect-note" class="text-[10px] text-indigo-600"></p>
+          <p id="offset-size-note" class="text-[10px] text-slate-500"></p>
+          <p id="offset-no-headings-note" class="hidden text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 flex items-start gap-1.5">
+            <i data-lucide="alert-triangle" class="w-3 h-3 mt-0.5 flex-shrink-0"></i><span id="offset-no-headings-text"></span>
+          </p>
           <p id="offset-preview" class="text-[10px] text-indigo-800 font-mono bg-white rounded border border-indigo-100 px-2 py-1"></p>
         </div>
         <div class="overflow-x-auto max-h-[280px] overflow-y-auto">
@@ -360,6 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeFileName = "document.docx";
   let defaultTabStopTwips = 720; // ค่า Tab Stop เริ่มต้นของไฟล์ (อ่านจาก word/settings.xml ตอนโหลดไฟล์)
   let headingStyleMap = {}; // level(1-9) -> styleId จริงของไฟล์นี้ (อ่านจาก styles.xml ตอนโหลดไฟล์)
+  let headingStyleSizeMap = {}; // level(1-9) -> {sizePt, bold} ขนาด/ความหนาจริงของ Style นั้นในไฟล์นี้
 
   const fileInput = document.getElementById('file-input');
   const dropZone = document.getElementById('drop-zone');
@@ -429,6 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // เช่น "1" "2" "3" แทนที่จะเป็น "Heading1" "Heading2" ตามธรรมเนียม — ถ้าเขียนทับด้วยชื่อ
       // มาตรฐานเฉยๆ จะกลายเป็นอ้างอิง Style ที่ไม่มีอยู่จริง ทำให้เสียรูปแบบ (ตัวหนา/ขนาด/สี) ไป
       headingStyleMap = {};
+      headingStyleSizeMap = {};
       try {
         const stylesFile = zip.file('word/styles.xml');
         if (stylesFile) {
@@ -460,6 +467,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (level !== null && level >= 1 && level <= 9 && !(level in headingStyleMap)) {
               headingStyleMap[level] = styleId;
+              // เก็บขนาด/ตัวหนาจริงของ Style นี้ไว้ด้วย เพื่อโชว์ให้ผู้ใช้เห็นว่า Heading ระดับนี้
+              // ในไฟล์นี้หน้าตาเป็นอย่างไรจริงๆ (ไม่เดา/ไม่ฮาร์ดโค้ด เพราะแต่ละไฟล์ตั้งไม่เหมือนกัน)
+              const rPrEl = styleEl.getElementsByTagNameNS(W_NS,'rPr')[0];
+              if (rPrEl) {
+                const szEl = rPrEl.getElementsByTagNameNS(W_NS,'sz')[0];
+                const bEl = rPrEl.getElementsByTagNameNS(W_NS,'b')[0];
+                const halfPt = szEl ? parseInt(szEl.getAttributeNS(W_NS,'val') || szEl.getAttribute('w:val') || '', 10) : null;
+                const isBold = !!bEl && (bEl.getAttributeNS(W_NS,'val') !== '0' && bEl.getAttribute('w:val') !== 'false' && bEl.getAttribute('w:val') !== '0');
+                headingStyleSizeMap[level] = { sizePt: halfPt ? halfPt/2 : null, bold: isBold };
+              }
             }
           });
         }
@@ -475,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function clearSelectedFile() {
-    zip = null; docXmlString = ""; xmlDoc = null; headingItems = []; defaultTabStopTwips = 720; headingStyleMap = {};
+    zip = null; docXmlString = ""; xmlDoc = null; headingItems = []; defaultTabStopTwips = 720; headingStyleMap = {}; headingStyleSizeMap = {};
     fileInput.value = "";
     optFixTabs.checked = false;
     optStaircase.checked = false;
@@ -902,6 +919,32 @@ document.addEventListener('DOMContentLoaded', () => {
       offsetPreviewEl.textContent = chain.join('  →  ');
     }
 
+    // จัดการกรณีไม่พบหัวข้อแบบ x.x เลยในเอกสาร (เช่น ใช้ ก./ข./ค. ล้วนๆ) — Dropdown นี้ไม่มีความหมาย
+    const hasDottedHeadings = classified.some(item => item.kind === 'dotted');
+    const noHeadingsNote = document.getElementById('offset-no-headings-note');
+    if (dotsLevelSelect) dotsLevelSelect.disabled = !hasDottedHeadings;
+    if (noHeadingsNote) {
+      if (!hasDottedHeadings) {
+        const noHeadingsText = document.getElementById('offset-no-headings-text');
+        if (noHeadingsText) noHeadingsText.textContent = `ไม่พบหัวข้อแบบมีจุด (x.x) ในเอกสารนี้ หากคุณใช้รูปแบบ ก., ข., ค. ระบบจะข้ามการปรับระดับหัวข้อนี้ไปโดยอัตโนมัติ (จะใช้ Heading${1 + autoDetected} เป็นค่าเผื่อไว้เท่านั้น หากมีหัวข้อ x.x เกิดขึ้นภายหลัง)`;
+        noHeadingsNote.classList.remove('hidden');
+      } else {
+        noHeadingsNote.classList.add('hidden');
+      }
+    }
+
+    // โชว์ขนาด/ความหนาจริงของ Heading ระดับที่เลือก อ่านจาก styles.xml ของไฟล์นี้โดยตรง (ไม่เดา/ไม่ฮาร์ดโค้ด)
+    const sizeNoteEl = document.getElementById('offset-size-note');
+    if (sizeNoteEl) {
+      const targetLevel = 1 + dotsLevelOffset;
+      const sizeInfo = headingStyleSizeMap[targetLevel];
+      if (sizeInfo && sizeInfo.sizePt) {
+        sizeNoteEl.textContent = `Heading${targetLevel} ในไฟล์นี้: ขนาด ${sizeInfo.sizePt}pt${sizeInfo.bold ? ' ตัวหนา' : ''}`;
+      } else {
+        sizeNoteEl.textContent = '';
+      }
+    }
+
     classified.forEach(item => {
       const { p, text, kind } = item;
       const currentStyle = getPStyle(p) || '(ไม่มี Style)';
@@ -1017,6 +1060,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('opt-dots-level').addEventListener('change', (e) => {
     runAnalysis(Number(e.target.value) - 1);
   });
+  document.getElementById('btn-reset-offset').addEventListener('click', () => runAnalysis());
 
   function renderProposalTable(items, warnings) {
     proposalTableRows.innerHTML = '';
