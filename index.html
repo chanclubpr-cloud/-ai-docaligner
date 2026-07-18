@@ -68,7 +68,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
       <div class="bg-gradient-to-br from-indigo-600 to-blue-500 text-white p-2 rounded-xl shadow-md"><i data-lucide="file-check-2" class="w-6 h-6"></i></div>
       <div>
         <h1 class="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-slate-700">AI DocAligner</h1>
-        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 2.0 &bull; Academic Edition</span>
+        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 2.1 &bull; Academic Edition</span>
       </div>
     </div>
     <span class="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold shadow-sm flex items-center gap-1">
@@ -128,6 +128,18 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
             <i data-lucide="list-checks" class="w-4 h-4 text-orange-500"></i>2. รายการแก้ไขที่ตรวจพบ
           </h2>
           <span class="text-[9px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">รอผู้ใช้กดอนุมัติ</span>
+        </div>
+        <div class="p-2.5 bg-indigo-50 border border-indigo-200 rounded-lg text-[11px] space-y-1.5">
+          <label class="flex items-center gap-2 font-semibold text-indigo-900">
+            <span>หัวข้อ x.x (1 จุด) ควรเป็นระดับ:</span>
+            <select id="opt-dots-level" class="text-[11px] border border-indigo-300 rounded px-1.5 py-0.5 bg-white">
+              <option value="2">Heading2</option>
+              <option value="3">Heading3</option>
+              <option value="4">Heading4</option>
+            </select>
+          </label>
+          <p id="offset-detect-note" class="text-[10px] text-indigo-600"></p>
+          <p id="offset-preview" class="text-[10px] text-indigo-800 font-mono bg-white rounded border border-indigo-100 px-2 py-1"></p>
         </div>
         <div class="overflow-x-auto max-h-[280px] overflow-y-auto">
           <table class="w-full text-[11px] text-left border-collapse">
@@ -298,7 +310,41 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ระดับ Heading (1-based) จากจำนวนจุด: บทที่=1, เลขเปล่า/ไม่มีจุด=2, 1จุด=3, 2จุด=4, 3จุด=5, ...
-  function levelFromDots(dots) { return dots + 2; }
+  function levelFromDots(dots, offset) { return dots + (offset === undefined ? 2 : offset); }
+
+  // ตรวจจับ "offset" ระหว่างจำนวนจุดกับระดับ Heading จากโครงสร้างจริงของเอกสารนี้
+  // (แทนการตายตัวว่า x.x ต้องเป็น Heading3 เสมอ) — พบจากไฟล์จริงว่าบางเอกสารไม่มีเลขเปล่า
+  // เป็นหัวข้อใหญ่เลย (ขึ้นจาก "บทที่" ไปที่ x.x ตรงๆ) กรณีนี้ x.x ควรเป็น Heading2 ไม่ใช่ Heading3
+  //
+  // วิธีตรวจ: ดูจาก Style ที่ "ผู้เขียนตั้งไว้เองแล้ว" บนหัวข้อจุด (dotted) ที่มีอยู่จริงในเล่ม
+  // (ไม่ใช้สัญญาณจากเลขเปล่า เพราะพบว่าเลขเปล่ามักเป็น false positive จากรายการเช็คลิสต์ธรรมดา
+  // เช่น "1. การตรวจศีรษะ...", "2. การตรวจทรวงอก..." ที่ดันมาอยู่ก่อนหัวข้อ x.x แรกของหมวดนั้นพอดี)
+  // เทียบ "ระดับที่ผู้เขียนตั้งจริง" กับ "จำนวนจุด" แล้วโหวตหา offset ที่พบบ่อยที่สุด
+  // ถ้าไม่มีหลักฐานเพียงพอ (ยังไม่มี Style ตั้งไว้เลยสักหัวข้อ) ใช้ค่าเริ่มต้นเดิม (จุด+2)
+  function detectDotsLevelOffset(classified) {
+    const styleIdToLevel = {};
+    Object.keys(headingStyleMap).forEach(level => {
+      styleIdToLevel[headingStyleMap[level]] = Number(level);
+    });
+
+    const votes = {};
+    classified.forEach(item => {
+      if (item.kind !== 'dotted') return;
+      const currentStyle = getPStyle(item.p);
+      if (!currentStyle || !(currentStyle in styleIdToLevel)) return;
+      const level = styleIdToLevel[currentStyle];
+      const dots = (item.number.match(/\./g) || []).length;
+      const offset = level - dots;
+      votes[offset] = (votes[offset] || 0) + 1;
+    });
+
+    let bestOffset = null, bestCount = 0;
+    Object.keys(votes).forEach(off => {
+      if (votes[off] > bestCount) { bestCount = votes[off]; bestOffset = Number(off); }
+    });
+
+    return (bestOffset !== null && bestCount >= 2) ? bestOffset : 2;
+  }
   function displayHeadingLabel(level) { return 'Heading' + level; }
   // คืนค่า styleId "จริง" ที่ไฟล์นี้ใช้สำหรับ Heading ระดับนั้น (อ่านจาก styles.xml ตอนโหลดไฟล์)
   // ถ้าหาไม่เจอ (ไฟล์นี้ไม่เคยมี Heading ระดับนี้มาก่อน) fallback เป็นชื่อมาตรฐาน "HeadingN"
@@ -822,7 +868,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---- ขั้นตอนที่ 1-2: สกัดโครงสร้างจริง + เทียบระดับ (deterministic JS, ไม่ใช้ AI) ----
-  btnStartAnalyze.addEventListener('click', () => {
+  // offsetOverride: ถ้าไม่ใส่ (undefined) จะให้ระบบตรวจจับอัตโนมัติ; ถ้าใส่ (จากการเลือก Dropdown เอง) จะใช้ค่านั้นตรงๆ
+  function runAnalysis(offsetOverride) {
     if (!xmlDoc) return;
     headingItems = [];
     paraElements = [];
@@ -832,6 +879,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const classified = classifyDocument();
     const missingLevels = new Set();
+    const autoDetected = detectDotsLevelOffset(classified);
+    const dotsLevelOffset = (offsetOverride !== undefined && offsetOverride !== null) ? offsetOverride : autoDetected;
+
+    // อัปเดต Dropdown ให้ตรงกับค่าที่ใช้จริง (ทั้งตอน auto-detect และตอนผู้ใช้เลือกเอง)
+    const dotsLevelSelect = document.getElementById('opt-dots-level');
+    if (dotsLevelSelect) dotsLevelSelect.value = String(1 + dotsLevelOffset);
+    const detectNote = document.getElementById('offset-detect-note');
+    if (detectNote) {
+      detectNote.textContent = (offsetOverride === undefined || offsetOverride === null)
+        ? `ตรวจจับอัตโนมัติจาก Style เดิมในไฟล์: x.x = Heading${1 + autoDetected}${autoDetected === 2 && !classified.some(i => i.kind==='dotted' && getPStyle(i.p)) ? ' (ไม่พบหลักฐาน ใช้ค่ามาตรฐาน)' : ''}`
+        : `เลือกเองโดยผู้ใช้ (ระบบตรวจจับอัตโนมัติแนะนำ Heading${1 + autoDetected})`;
+    }
+    const offsetPreviewEl = document.getElementById('offset-preview');
+    if (offsetPreviewEl) {
+      const chain = ['บทที่=H1'];
+      for (let d = 0; d <= 3; d++) {
+        const lvl = levelFromDots(d, dotsLevelOffset);
+        const label = d === 0 ? 'x' : 'x.' + Array(d).fill('x').join('.');
+        chain.push(`${label}=H${lvl}`);
+      }
+      offsetPreviewEl.textContent = chain.join('  →  ');
+    }
 
     classified.forEach(item => {
       const { p, text, kind } = item;
@@ -850,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (kind === 'dotted' || kind === 'bareHeading') {
         const number = item.number;
         const dots = (number.match(/\./g) || []).length;
-        const level = levelFromDots(dots);
+        const level = levelFromDots(dots, dotsLevelOffset);
         const expectedStyleId = resolveHeadingStyleId(level);
         if (!headingStyleMap[level]) missingLevels.add(level);
         let status;
@@ -942,6 +1011,11 @@ document.addEventListener('DOMContentLoaded', () => {
     renderProposalTable(headingItems, warnings);
     updateStepsIndicator(2);
     renderOutlinePreview(headingItems);
+  }
+
+  btnStartAnalyze.addEventListener('click', () => runAnalysis());
+  document.getElementById('opt-dots-level').addEventListener('change', (e) => {
+    runAnalysis(Number(e.target.value) - 1);
   });
 
   function renderProposalTable(items, warnings) {
