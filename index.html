@@ -68,7 +68,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
       <div class="bg-gradient-to-br from-indigo-600 to-blue-500 text-white p-2 rounded-xl shadow-md"><i data-lucide="file-check-2" class="w-6 h-6"></i></div>
       <div>
         <h1 class="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-slate-700">AI DocAligner</h1>
-        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 2.4 &bull; Academic Edition</span>
+        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 2.5 &bull; Academic Edition</span>
       </div>
     </div>
     <span class="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold shadow-sm flex items-center gap-1">
@@ -726,7 +726,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const width = measureTextWidthTwips(number, family, sizePt);
         textStartMap[number] = snapToTabStop(indent + width);
         currentTextStart = textStartMap[number];
-        setIndent(p, indent);
+        // หัวข้อจุดที่อยู่ในตาราง (เช่น Layout Table ไม่มีเส้นขอบ) ยังคงแก้ Style ให้ถูกต้องได้ตามปกติ
+        // (ดู classifyDocument) แต่ "ไม่" ปรับ w:ind ให้ เพราะระยะเยื้องในเซลล์ตารางอ้างอิงจากความกว้าง
+        // เซลล์ ไม่ใช่ระยะขอบหน้ากระดาษ ค่า Staircase ที่คำนวณแบบหน้ากระดาษจะไม่แม่นยำในบริบทนี้
+        if (!isInsideTable(p)) setIndent(p, indent);
         return;
       }
 
@@ -819,12 +822,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const DEDENT_THRESHOLD = 200; // twips — เยื้องตื้นกว่าอันก่อนหน้าอย่างน้อยขนาดนี้ถึงถือว่าเป็นการ "ย่อกลับ" จริง
 
     paragraphs.forEach(p => {
-      if (isInsideTable(p)) { results.push({ p, text: getParaText(p), kind: 'table' }); return; }
       const text = getParaText(p);
       if (!text) { results.push({ p, text, kind: 'empty' }); return; }
       const originalIndent = getOriginalFirstLineIndent(p);
+      const insideTable = isInsideTable(p);
 
       if (CHAPTER_RE.test(text)) {
+        // "บทที่" ยังคงนับเป็นหัวข้อเสมอแม้อยู่ในตาราง (บางเอกสารใช้ตารางไม่มีเส้นขอบเป็นกลไกจัด Layout
+        // ครอบเนื้อหาไว้ทั้งเล่ม ไม่ใช่ตารางข้อมูลจริง — เจอกรณีนี้จริงจากไฟล์ผู้ใช้)
         maxDots = 0; // ขึ้นบทใหม่ รีเซ็ตบริบท
         prevIndent = originalIndent;
         results.push({ p, text, kind: 'chapter' });
@@ -833,11 +838,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // ตรวจรูปแบบวงเล็บก่อนเสมอ (1) หรือ 1.1) ) เพราะหัวข้อจุดจริงจะไม่มี ")" ต่อท้ายเลขทันที
       // ถ้าไม่เช็คก่อน "1.1)" จะถูก NUMBER_RE ตีความผิดว่าเป็นหัวข้อ "1.1" (เจอปัญหานี้จริงจากตัวอย่างผู้ใช้)
+      // รายการวงเล็บในตาราง มีโอกาสเป็นเลขลำดับข้อมูลจริงมากกว่าหัวข้อ จึงยังคงข้ามถ้าอยู่ในตาราง
       const bracket = BRACKET_RE.exec(text);
-      if (bracket) { prevIndent = originalIndent; results.push({ p, text, kind: 'bracket', number: bracket[1] }); return; }
+      if (bracket) {
+        if (insideTable) { results.push({ p, text, kind: 'table' }); return; }
+        prevIndent = originalIndent; results.push({ p, text, kind: 'bracket', number: bracket[1] }); return;
+      }
 
       const dotted = NUMBER_RE.exec(text);
       if (dotted && hasRealHeadingText(text, dotted[0].length)) {
+        // หัวข้อจุดที่มีข้อความชื่อเรื่องต่อท้ายชัดเจน (ผ่าน hasRealHeadingText มาแล้ว) ถือเป็นหัวข้อจริง
+        // เสมอแม้จะอยู่ในตาราง — สัญญาณนี้ชัดเจนพอที่จะไม่ใช่ตัวเลขข้อมูล (ต่างจากเลขเปล่า/วงเล็บที่กำกวมกว่า)
         const number = dotted[1];
         const dots = (number.match(/\./g) || []).length;
         if (dots > maxDots) maxDots = dots;
@@ -845,6 +856,9 @@ document.addEventListener('DOMContentLoaded', () => {
         results.push({ p, text, kind: 'dotted', number });
         return;
       }
+
+      // เลขเปล่าในตาราง กำกวมกว่าหัวข้อจุด (อาจเป็นเลขลำดับแถวข้อมูลจริง) จึงยังคงข้ามถ้าอยู่ในตาราง
+      if (insideTable) { results.push({ p, text, kind: 'table' }); return; }
 
       const bare = BARE_NUMBER_RE.exec(text);
       if (bare && !/^\d/.test(text.slice(bare[0].length)) && hasRealHeadingText(text, bare[0].length)) {
