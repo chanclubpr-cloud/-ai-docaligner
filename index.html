@@ -68,7 +68,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
       <div class="bg-gradient-to-br from-indigo-600 to-blue-500 text-white p-2 rounded-xl shadow-md"><i data-lucide="file-check-2" class="w-6 h-6"></i></div>
       <div>
         <h1 class="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-slate-700">AI DocAligner</h1>
-        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 2.3 &bull; Academic Edition</span>
+        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 2.4 &bull; Academic Edition</span>
       </div>
     </div>
     <span class="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold shadow-sm flex items-center gap-1">
@@ -233,27 +233,26 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 w-full">
   <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-    <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5 mb-3">
-      <i data-lucide="message-square-heart" class="w-4 h-4 text-pink-500"></i>ให้ Feedback การใช้งาน
-    </h2>
-    <div id="feedback-form">
-      <p class="text-xs text-slate-500 mb-2">ให้คะแนนความพึงพอใจ (1-5 ดาว)</p>
-      <div id="feedback-stars" class="flex gap-1 mb-3">
-        <button type="button" class="feedback-star text-2xl text-slate-300 hover:scale-110 transition-transform" data-value="1">★</button>
-        <button type="button" class="feedback-star text-2xl text-slate-300 hover:scale-110 transition-transform" data-value="2">★</button>
-        <button type="button" class="feedback-star text-2xl text-slate-300 hover:scale-110 transition-transform" data-value="3">★</button>
-        <button type="button" class="feedback-star text-2xl text-slate-300 hover:scale-110 transition-transform" data-value="4">★</button>
-        <button type="button" class="feedback-star text-2xl text-slate-300 hover:scale-110 transition-transform" data-value="5">★</button>
+    <div id="feedback-form" class="text-center space-y-2">
+      <p class="text-xs text-slate-600">ช่วยบอกหน่อยได้มั้ยครับ ใช้แล้วเป็นไงบ้าง? 🙏</p>
+      <div id="feedback-stars" class="flex justify-center gap-1.5">
+        <button type="button" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="1">★</button>
+        <button type="button" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="2">★</button>
+        <button type="button" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="3">★</button>
+        <button type="button" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="4">★</button>
+        <button type="button" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="5">★</button>
       </div>
-      <textarea id="feedback-comment" rows="3" placeholder="ความคิดเห็นเพิ่มเติม (ไม่บังคับ)" class="w-full text-xs border border-slate-200 rounded-lg p-2.5 focus:outline-none focus:border-blue-400 resize-none"></textarea>
-      <button id="btn-send-feedback" class="mt-3 bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-lg text-xs flex items-center gap-1.5 transition-all">
-        <i data-lucide="send" class="w-3.5 h-3.5"></i><span>ส่ง Feedback</span>
-      </button>
-      <p id="feedback-hint" class="text-[10px] text-slate-400 mt-2">Feedback จะถูกส่งไปเก็บไว้ในระบบของผู้พัฒนาเท่านั้น ไม่มีการเก็บชื่อหรือข้อมูลส่วนตัวใดๆ</p>
+      <p class="text-[10px] text-slate-400">แตะดาวเพื่อให้คะแนน ส่งอัตโนมัติทันที (ให้คะแนนตอนไหนก็ได้ ไม่ต้องรอทำเสร็จ)</p>
     </div>
-    <div id="feedback-thanks" class="hidden text-center py-4">
-      <i data-lucide="heart-handshake" class="w-8 h-8 text-pink-500 mx-auto mb-2"></i>
-      <p class="text-sm font-semibold text-slate-700">ขอบคุณสำหรับ Feedback ครับ!</p>
+    <div id="feedback-thanks" class="hidden text-center space-y-3">
+      <div class="text-3xl">🎉</div>
+      <p class="text-sm font-bold text-slate-700">ขอบคุณครับ!</p>
+      <p id="feedback-rating-echo" class="text-xs text-amber-500"></p>
+      <button id="btn-add-comment" class="text-[11px] text-blue-600 underline">+ อยากบอกอะไรเพิ่มเติม (ไม่บังคับ)</button>
+      <div id="feedback-comment-box" class="hidden pt-2 text-left">
+        <textarea id="feedback-comment" rows="2" placeholder="พิมพ์ความเห็นตรงนี้ได้เลย..." class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:outline-none focus:border-blue-400 resize-none"></textarea>
+        <button id="btn-send-comment" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1.5 px-4 rounded-lg">ส่ง</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1280,23 +1279,28 @@ document.addEventListener('DOMContentLoaded', () => {
   feedbackStars.forEach(btn => {
     btn.addEventListener('mouseenter', () => paintStars(Number(btn.dataset.value)));
     btn.addEventListener('mouseleave', () => paintStars(selectedRating));
+    // คลิกดาว = ส่งทันที ไม่ต้องกดปุ่มส่งซ้ำ (ลดขั้นตอนจาก 2 คลิกเหลือ 1 คลิก)
     btn.addEventListener('click', () => {
       selectedRating = Number(btn.dataset.value);
       paintStars(selectedRating);
+      pingEndpoint({ action: 'feedback', rating: selectedRating, comment: '', pageUrl: location.href });
+      document.getElementById('feedback-form').classList.add('hidden');
+      document.getElementById('feedback-thanks').classList.remove('hidden');
+      document.getElementById('feedback-rating-echo').textContent = '★'.repeat(selectedRating) + '☆'.repeat(5 - selectedRating);
     });
   });
 
-  document.getElementById('btn-send-feedback').addEventListener('click', () => {
-    if (selectedRating === 0) { alert('กรุณาให้คะแนนอย่างน้อย 1 ดาวก่อนส่ง Feedback ครับ'); return; }
-    if (!FEEDBACK_ENDPOINT_URL) {
-      alert('ยังไม่ได้ตั้งค่าปลายทางรับ Feedback (FEEDBACK_ENDPOINT_URL) ในโค้ด — ดูวิธีตั้งค่าในไฟล์ feedback-tracker-gas.js');
-      return;
-    }
-    const comment = document.getElementById('feedback-comment').value.trim();
-    pingEndpoint({ action: 'feedback', rating: selectedRating, comment, pageUrl: location.href });
-    document.getElementById('feedback-form').classList.add('hidden');
-    document.getElementById('feedback-thanks').classList.remove('hidden');
+  document.getElementById('btn-add-comment').addEventListener('click', () => {
+    document.getElementById('feedback-comment-box').classList.remove('hidden');
   });
+
+  document.getElementById('btn-send-comment').addEventListener('click', () => {
+    const comment = document.getElementById('feedback-comment').value.trim();
+    if (!comment) return;
+    pingEndpoint({ action: 'feedback', rating: selectedRating, comment, pageUrl: location.href });
+    document.getElementById('feedback-comment-box').innerHTML = '<p class="text-[11px] text-emerald-600">ส่งความเห็นแล้ว ขอบคุณครับ 🙏</p>';
+  });
+
 
 
   function updateStepsIndicator(activeStep) {
