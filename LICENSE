@@ -1,0 +1,60 @@
+AI DocAligner — LICENSE
+
+Copyright (c) 2026 Channarong Prasankok (ชาญณรงค์ ประสารกก)
+All Rights Reserved.
+
+--------------------------------------------------------------------------
+ภาษาไทย
+--------------------------------------------------------------------------
+
+ซอฟต์แวร์ "AI DocAligner" รวมถึงซอร์สโค้ด โครงสร้าง อัลกอริทึม เอกสารประกอบ
+และทรัพย์สินทางปัญญาอื่นใดที่เกี่ยวข้องทั้งหมด (ต่อไปนี้เรียกว่า "ซอฟต์แวร์")
+เป็นลิขสิทธิ์ของ นายชาญณรงค์ ประสารกก แต่เพียงผู้เดียว ได้รับความคุ้มครองตาม
+พระราชบัญญัติลิขสิทธิ์ พ.ศ. 2537 และที่แก้ไขเพิ่มเติม รวมถึงกฎหมายทรัพย์สิน
+ทางปัญญาระหว่างประเทศที่เกี่ยวข้อง
+
+สงวนสิทธิ์ทั้งหมด (All Rights Reserved) ห้ามมิให้บุคคลใดกระทำการดังต่อไปนี้
+กับซอฟต์แวร์นี้ ไม่ว่าทั้งหมดหรือบางส่วน โดยไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร
+จากเจ้าของลิขสิทธิ์ก่อนล่วงหน้า:
+
+  1. คัดลอก ทำซ้ำ หรือดัดแปลงซอร์สโค้ดไม่ว่าในรูปแบบใด
+  2. เผยแพร่ แจกจ่าย หรือนำไปใช้งานต่อ ไม่ว่าจะมีค่าตอบแทนหรือไม่ก็ตาม
+  3. นำไปใช้ในเชิงพาณิชย์ หรือแอบอ้างเป็นผลงานของตนเอง
+  4. ทำวิศวกรรมย้อนกลับ (Reverse Engineer) เพื่อวัตถุประสงค์ในการลอกเลียนแบบ
+
+การที่ซอฟต์แวร์นี้เปิดให้เข้าถึงหรือดูซอร์สโค้ดได้ผ่านเว็บเบราว์เซอร์ (Client-side)
+มิได้หมายความว่าเจ้าของลิขสิทธิ์สละสิทธิ์หรืออนุญาตให้นำไปใช้แต่อย่างใด
+
+ผู้ใดฝ่าฝืนอาจต้องรับผิดทั้งทางแพ่งและทางอาญาตามที่กฎหมายกำหนด
+
+สอบถามเรื่องการขออนุญาตใช้งาน ติดต่อ: Channarong Prasankok
+
+--------------------------------------------------------------------------
+English
+--------------------------------------------------------------------------
+
+The software "AI DocAligner", including its source code, structure,
+algorithms, documentation, and all related intellectual property
+(collectively, the "Software"), is the sole copyright of
+Channarong Prasankok and is protected under the Thai Copyright Act
+B.E. 2537 (1994), as amended, and applicable international
+intellectual property laws.
+
+ALL RIGHTS RESERVED. No person may, without the prior written
+permission of the copyright holder:
+
+  1. Copy, reproduce, or modify the source code in any form;
+  2. Publish, distribute, or redistribute the Software, whether for
+     commercial gain or otherwise;
+  3. Use the Software for commercial purposes, or misrepresent it as
+     one's own work;
+  4. Reverse engineer the Software for the purpose of duplication.
+
+The fact that this Software's source code is client-side and
+therefore viewable in a web browser does not constitute a waiver of
+copyright or a grant of any license to use it.
+
+Unauthorized use may result in civil and/or criminal liability under
+applicable law.
+
+For licensing inquiries, contact: Channarong Prasankok
