@@ -1849,4 +1849,98 @@ document.addEventListener('DOMContentLoaded', () => {
           ['จัด Tab หลังเลขหัวข้อ', editStats.tabsNormalized + ' รายการ'],
           ['กำหนดระยะเยื้องย่อหน้า', editStats.indentApplied + ' ย่อหน้า'],
           ['ลบ Tab/ช่องว่างค้างหน้าข้อความ', editStats.leadingWsCleaned + ' จุด'],
-          ['เปลี่ยนการจัดกระจายเป็นชิดซ้าย', editStats.
+          ['เปลี่ยนการจัดกระจายเป็นชิดซ้าย', editStats.justifyFixed + ' จุด'],
+          ['กำกับภาษาไทย (w:bidi)', editStats.langSet + ' run'],
+          ['คงจุดหยุด Tab เดิมของผู้เขียนไว้', editStats.tabStopsPreserved + ' ย่อหน้า']
+        ].filter(r => parseInt(r[1], 10) > 0);
+        if (editStats.stylesSkipped) rows.push(['ข้ามเพราะไฟล์ไม่มี Style ที่ต้องใช้', editStats.stylesSkipped + ' รายการ']);
+        sumEl.innerHTML = '<div class="font-bold text-slate-800 mb-1">สรุปสิ่งที่ระบบทำกับไฟล์นี้</div>' +
+          rows.map(r => '<div class="flex justify-between gap-3"><span>' + r[0] + '</span><span class="font-semibold text-slate-900">' + r[1] + '</span></div>').join('');
+        sumEl.classList.remove('hidden');
+      }
+
+      proposalBox.classList.add('hidden');
+      finalExportBox.classList.remove('hidden');
+      renderOutlinePreview(headingItems);
+      updateStepsIndicator(3);
+    } catch (error) {
+      // [FIX-9] คืนสภาพ XML เป็นต้นฉบับ ไม่ให้การกดซ้ำไปซ้อนทับผลที่แก้ไปแล้วบางส่วน
+      xmlDoc = new DOMParser().parseFromString(docXmlString, 'application/xml');
+      showToast('ไม่สามารถสร้างไฟล์ฉบับปรับปรุงได้ (คืนค่าต้นฉบับแล้ว โปรดสแกนใหม่): ' + error.message);
+      btnApproveProposal.disabled = false;
+      btnApproveProposal.classList.remove('opacity-60','cursor-wait');
+      btnApproveProposal.querySelector('span').textContent = originalButtonText;
+    }
+  });
+
+  btnRejectProposal.addEventListener('click', () => {
+    proposalBox.classList.add('hidden');
+    updateStepsIndicator(1);
+  });
+
+  // ---- Export: เขียน XML ที่แก้แล้วกลับเข้า zip แล้วดาวน์โหลดเป็น .docx จริง ----
+  document.getElementById('btn-save-docx').addEventListener('click', async () => {
+    if (!zip || !xmlDoc) return;
+    const serializer = new XMLSerializer();
+    const newXml = serializer.serializeToString(xmlDoc);
+    zip.file('word/document.xml', newXml);
+    if (stylesDoc && stylesDirty) zip.file('word/styles.xml', serializer.serializeToString(stylesDoc));
+    const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = activeFileName.replace(/\.docx$/i, '') + '-aligned.docx';
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('btn-restart-app').addEventListener('click', clearSelectedFile);
+
+  // ---- Feedback: ดาว 5 ระดับ + ความคิดเห็น ----
+  let selectedRating = 0;
+  const feedbackStars = Array.from(document.querySelectorAll('.feedback-star'));
+  function paintStars(upTo) {
+    feedbackStars.forEach(btn => {
+      const v = Number(btn.dataset.value);
+      btn.classList.toggle('text-amber-400', v <= upTo);
+      btn.classList.toggle('text-slate-300', v > upTo);
+    });
+  }
+  feedbackStars.forEach(btn => {
+    btn.addEventListener('mouseenter', () => paintStars(Number(btn.dataset.value)));
+    btn.addEventListener('mouseleave', () => paintStars(selectedRating));
+    // คลิกดาว = ส่งทันที ไม่ต้องกดปุ่มส่งซ้ำ (ลดขั้นตอนจาก 2 คลิกเหลือ 1 คลิก)
+    btn.addEventListener('click', () => {
+      selectedRating = Number(btn.dataset.value);
+      paintStars(selectedRating);
+      pingEndpoint({ action: 'feedback', rating: selectedRating, comment: '', pageUrl: location.href });
+      document.getElementById('feedback-form').classList.add('hidden');
+      document.getElementById('feedback-thanks').classList.remove('hidden');
+      document.getElementById('feedback-rating-echo').textContent = '★'.repeat(selectedRating) + '☆'.repeat(5 - selectedRating);
+    });
+  });
+
+  document.getElementById('btn-add-comment').addEventListener('click', () => {
+    document.getElementById('feedback-comment-box').classList.remove('hidden');
+  });
+
+  document.getElementById('btn-send-comment').addEventListener('click', () => {
+    const comment = document.getElementById('feedback-comment').value.trim();
+    if (!comment) return;
+    pingEndpoint({ action: 'feedback', rating: selectedRating, comment, pageUrl: location.href });
+    document.getElementById('feedback-comment-box').innerHTML = '<p class="text-[11px] text-emerald-600">ส่งความเห็นแล้ว ขอบคุณครับ 🙏</p>';
+  });
+
+
+
+  function updateStepsIndicator(activeStep) {
+    const steps = [document.getElementById('s-step-1'), document.getElementById('s-step-2'), document.getElementById('s-step-3')];
+    steps.forEach(s => { s.classList.remove('text-blue-600','font-bold'); s.classList.add('text-slate-400'); });
+    steps[activeStep-1].classList.remove('text-slate-400');
+    steps[activeStep-1].classList.add('text-blue-600','font-bold');
+  }
+});
+})();
+</script>
+</body>
+</html>
