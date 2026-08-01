@@ -1,4 +1,3 @@
-
 <!--
   AI DocAligner
   Copyright (c) 2026 Channarong Prasankok (ชาญณรงค์ ประสารกก). All Rights Reserved.
@@ -77,7 +76,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
       <div class="bg-gradient-to-br from-indigo-600 to-blue-500 text-white p-2 rounded-xl shadow-md"><i data-lucide="file-check-2" class="w-6 h-6"></i></div>
       <div>
         <h1 class="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-slate-700">AI DocAligner</h1>
-        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 3.2 &bull; Academic Edition</span>
+        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 5.0 &bull; Academic Edition</span>
       </div>
     </div>
     <span class="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold shadow-sm flex items-center gap-1">
@@ -103,7 +102,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
           <i data-lucide="file-up" class="w-4 h-4 text-blue-600"></i>1. แนบไฟล์เอกสารต้นฉบับ (.docx)
         </h2>
         <div id="drop-zone" class="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-xl p-6 text-center transition-all cursor-pointer bg-slate-50 relative">
-          <input type="file" id="file-input" accept=".docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+          <input type="file" id="file-input" aria-label="เลือกไฟล์เอกสาร Word นามสกุล .docx" accept=".docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
           <div class="space-y-2 pointer-events-none">
             <div class="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-sm mx-auto text-slate-400"><i data-lucide="file-text" class="w-5 h-5"></i></div>
             <div>
@@ -120,9 +119,9 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
               <p id="doc-file-size" class="text-[10px] text-slate-500">0 KB</p>
             </div>
           </div>
-          <button id="btn-delete-file" class="text-slate-400 hover:text-red-500 transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
+          <button id="btn-delete-file" aria-label="ลบไฟล์ที่แนบไว้" class="text-slate-400 hover:text-red-500 transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
         </div>
-        <button id="btn-start-analyze" disabled class="w-full bg-slate-300 text-slate-500 font-bold py-2.5 rounded-lg text-xs flex items-center justify-center space-x-2 transition-all cursor-not-allowed">
+        <button id="btn-start-analyze" aria-label="สแกนและตรวจสอบโครงสร้างหัวข้อของเอกสาร" disabled class="w-full bg-slate-300 text-slate-500 font-bold py-2.5 rounded-lg text-xs flex items-center justify-center space-x-2 transition-all cursor-not-allowed">
           <i data-lucide="scan-line" class="w-4 h-4"></i><span>สแกนและตรวจสอบโครงสร้างหัวข้อ</span>
         </button>
         <p class="text-[10px] text-slate-400 leading-relaxed">ระบบอ่านสไตล์ (Heading Style) จริงจากไฟล์ .docx โดยตรง ไม่ใช้ AI ในการตัดสินระดับหัวข้อ — ใช้กฎตายตัวตามจำนวนจุดในเลขนำหน้า เพื่อความแม่นยำ 100% และไม่มีการส่งเนื้อหาเอกสารออกนอกเครื่อง</p>
@@ -131,7 +130,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
         </div>
       </div>
 
-      <div id="proposal-box" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+      <div id="proposal-box" role="region" aria-live="polite" aria-label="รายการแก้ไขที่ตรวจพบ" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
         <div class="border-b pb-2 flex justify-between items-center">
           <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5 text-orange-600">
             <i data-lucide="list-checks" class="w-4 h-4 text-orange-500"></i>2. รายการแก้ไขที่ตรวจพบ
@@ -181,7 +180,13 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
           <div class="font-bold flex items-center gap-1 sticky top-0 bg-amber-50 pb-1"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> ตรวจพบความผิดปกติของลำดับ <span id="warning-count" class="font-normal text-amber-600"></span></div>
           <ul id="warning-list" class="list-disc pl-4 space-y-1 max-h-[220px] overflow-y-auto pr-1"></ul>
         </div>
-        <fieldset class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-[11px] text-slate-700 space-y-2">
+        <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-[11px] text-slate-700 space-y-2">
+          <div class="font-bold text-blue-900 flex items-center gap-1.5">
+            <i data-lucide="wand-2" class="w-3.5 h-3.5"></i> ระบบจะดำเนินการดังนี้
+          </div>
+          <ul id="action-plan" class="list-disc pl-4 space-y-1.5 leading-relaxed"></ul>
+        </div>
+        <fieldset class="hidden rounded-lg border border-blue-200 bg-blue-50 p-3 text-[11px] text-slate-700 space-y-2">
           <legend class="px-1 font-bold text-blue-900">ขอบเขตการปรับแก้</legend>
           <p class="text-slate-600">ค่าเริ่มต้นจะแก้เฉพาะ Style ของหัวข้อที่ตรวจพบ และกำกับภาษา th-TH ให้ข้อความไทย (ไม่กระทบเนื้อหา/รูปแบบ) เพื่อป้องกันการเปลี่ยนเนื้อหาโดยไม่ตั้งใจ</p>
           <label class="flex items-start gap-2 cursor-pointer">
@@ -204,15 +209,16 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
         <div class="pt-2 flex space-x-2">
           <button id="btn-reject-proposal" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-lg font-medium transition-all">ยกเลิก</button>
           <button id="btn-approve-proposal" class="w-2/3 bg-green-600 hover:bg-green-700 text-white text-xs py-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all shadow-md">
-            <i data-lucide="check-check" class="w-4 h-4"></i><span>สร้างไฟล์ฉบับปรับปรุง</span>
+            <i data-lucide="check-check" class="w-4 h-4"></i><span>จัดรูปแบบและสร้างไฟล์ใหม่</span>
           </button>
         </div>
         <p id="no-changes-note" class="hidden text-[11px] text-green-700 bg-green-50 border border-green-200 rounded-lg p-2">ตรวจสอบแล้ว — Style ทุกหัวข้อถูกต้องตรงตามระดับที่ควรเป็น ไม่มีจุดที่ต้องแก้ไข</p>
       </div>
 
-      <div id="final-export-box" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+      <div id="final-export-box" role="region" aria-live="polite" aria-label="ผลดำเนินการ" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
         <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5"><i data-lucide="package-check" class="w-4 h-4 text-green-600"></i>3. ผลดำเนินการเสร็จสมบูรณ์</h2>
         <p class="text-xs text-slate-500">สร้างไฟล์ใหม่จากต้นฉบับเดิมแล้ว การปรับเพิ่มเติมจะทำเฉพาะรายการที่เลือกไว้ในขั้นตอนก่อนหน้า โปรดเปิดตรวจใน Microsoft Word ก่อนส่งเข้าระบบ</p>
+        <div id="summary-report" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-700 space-y-1"></div>
         <div class="grid grid-cols-2 gap-3 pt-2">
           <button id="btn-save-docx" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all">
             <i data-lucide="file-down" class="w-4 h-4"></i><span>ดาวน์โหลดไฟล์ .DOCX</span>
@@ -254,11 +260,11 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
     <div id="feedback-form" class="text-center space-y-2">
       <p class="text-xs text-slate-600">ช่วยบอกหน่อยได้มั้ยครับ ใช้แล้วเป็นไงบ้าง? 🙏</p>
       <div id="feedback-stars" class="flex justify-center gap-1.5">
-        <button type="button" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="1">★</button>
-        <button type="button" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="2">★</button>
-        <button type="button" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="3">★</button>
-        <button type="button" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="4">★</button>
-        <button type="button" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="5">★</button>
+        <button type="button" aria-label="ให้คะแนน" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="1">★</button>
+        <button type="button" aria-label="ให้คะแนน" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="2">★</button>
+        <button type="button" aria-label="ให้คะแนน" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="3">★</button>
+        <button type="button" aria-label="ให้คะแนน" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="4">★</button>
+        <button type="button" aria-label="ให้คะแนน" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="5">★</button>
       </div>
       <p class="text-[10px] text-slate-400">แตะดาวเพื่อให้คะแนน ส่งอัตโนมัติทันที (ให้คะแนนตอนไหนก็ได้ ไม่ต้องรอทำเสร็จ)</p>
     </div>
@@ -312,6 +318,27 @@ document.addEventListener('DOMContentLoaded', () => {
   // แจ้งสถิติการเข้าใช้แบบง่ายๆ (แค่เวลา + หน้าเว็บ + referrer ไม่เก็บข้อมูลส่วนบุคคลใดๆ)
   pingEndpoint({ action: 'visit', pageUrl: location.href, referrer: document.referrer || '' });
 
+  // [P50-F] แจ้งเตือนแบบไม่ขวางการทำงาน (alert ทำให้เบราว์เซอร์หยุดรอและอ่านยากบนมือถือ)
+  function showToast(message, kind) {
+    let box = document.getElementById('toast-area');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'toast-area';
+      box.setAttribute('role', 'status');
+      box.setAttribute('aria-live', 'polite');
+      box.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 items-center w-[92%] max-w-md';
+      document.body.appendChild(box);
+    }
+    const el = document.createElement('div');
+    const isErr = kind !== 'info';
+    el.className = 'w-full text-xs leading-relaxed rounded-lg shadow-lg px-3.5 py-2.5 border ' +
+      (isErr ? 'bg-red-50 border-red-200 text-red-800' : 'bg-slate-800 border-slate-700 text-white');
+    el.textContent = message;
+    box.appendChild(el);
+    setTimeout(() => { el.style.transition = 'opacity .4s'; el.style.opacity = '0';
+      setTimeout(() => el.remove(), 400); }, 7000);
+  }
+
   const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
   // ---- ระดับ Heading ตามจำนวนจุดในเลขนำหน้า (deterministic, ไม่ใช้ AI) ----
@@ -322,12 +349,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // ต้องมีอย่างน้อย 1 จุด (x.x) จึงถือเป็นหัวข้อจริงตามลำดับชั้นของบท
   // เลขเปล่าไม่มีจุด (1. 2. 3.) มักเป็นแค่ bullet list ย่อย ไม่ใช่หัวข้อหลัก จึงไม่รวมในการตรวจ
   // \s* (ไม่ใช่ \s+) ท้าย pattern เพราะในชีวิตจริงบางคนพิมพ์เลขติดกับข้อความเลย ไม่เว้นวรรค/แท็บ
-  const NUMBER_RE = /^\s*(\d+\.\d+(?:\.\d+)*)\.?\s*/;
+  // [P50-C] รองรับทั้งเลขอารบิกและเลขไทย (๐-๙) ในเลขนำหน้าหัวข้อ
+  const D = '[0-9\u0E50-\u0E59]';
+  const NUMBER_RE = new RegExp('^\\s*(' + D + '+\\.' + D + '+(?:\\.' + D + '+)*)\\.?\\s*');
   // รูปแบบเลขวงเล็บ เช่น 1) 2) รวมถึงแบบซ้อนลึก เช่น 1.1) 2.3) — ใช้สำหรับ Staircase Indent เท่านั้น ไม่เกี่ยวกับการตรวจ Heading Style
-  const BRACKET_RE = /^\s*(\d+(?:\.\d+)*)\)\s*/;
+  const BRACKET_RE = new RegExp('^\\s*(' + D + '+(?:\\.' + D + '+)*)\\)\\s*');
   // เลขเปล่า เช่น "1." "2." — ความหมายกำกวม: บางเอกสารใช้เป็นหัวข้อใหญ่ของบท (Heading2)
   // บางเอกสารใช้เป็นรายการย่อยระดับลึก (เหมือน 1) 2)) — ต้องดูบริบทตำแหน่งในเอกสารประกอบ
-  const BARE_NUMBER_RE = /^\s*(\d+)\.\s*/;
+  const BARE_NUMBER_RE = new RegExp('^\\s*(' + D + '+)\\.\\s*');
   // [P22] หัวข้อย่อยที่กำกับด้วยพยัญชนะไทย เช่น "ก." "ข." หรือ "ก)" — พบในเอกสารบางรูปแบบ
   // ต้องมีข้อความตามหลังจริง จึงกันสับสนกับคำย่อ (เช่น "น." = หน้า) ได้ระดับหนึ่ง
   const THAI_LETTER_RE = /^\s*([ก-ฮ])[.)]\s*/;
@@ -361,6 +390,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // มข.: เลขเปล่า=ระดับ2(ชิดซ้าย), x.x=ระดับ3(เยื้อง 1 ขั้น)  |  SIU: x.x=ระดับ2(ชิดซ้าย)
   // สูตรกลาง: numberStart = (ระดับ - 2) x INDENT_STEP_TWIPS  ใช้ได้ทั้งสองโปรไฟล์
   let currentDotsOffset = 2;
+  // [P50-B] เก็บสถิติสิ่งที่ระบบทำจริง เพื่อรายงานให้ผู้ใช้ตรวจสอบได้หลังสร้างไฟล์
+  let editStats = null;
+  function resetEditStats() {
+    editStats = { stylesFixed: 0, stylesSkipped: 0, tabsNormalized: 0, tabStopsPreserved: 0,
+      leadingWsCleaned: 0, indentApplied: 0, justifyFixed: 0, langSet: 0, tocSkipped: 0, listItems: 0 };
+  }
+  resetEditStats();
 
   function thaiDigits(s) {
     return String(s).replace(/[\u0E50-\u0E59]/g, d => String(d.charCodeAt(0) - 0x0E50));
@@ -423,14 +459,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // ความสัมพันธ์สำคัญ: ระดับ Heading = จำนวนจุด + (2 - baseDots) ใช้ค่าเดียวคุมทั้งระดับและระยะเยื้อง
   function detectStructureProfile(classified) {
     const dotHist = {};
-    let minDots = null, maxDots = null;
+    let minDots = null, maxDots = null, minDotsDotted = null;
     let unnumbered = 0, brackets = 0, thaiLetters = 0, bareHeadings = 0;
 
+    let seenChapter = false;
     classified.forEach(item => {
+      if (item.kind === 'chapter') { seenChapter = true; return; }
       if (item.kind === 'dotted') {
         const d = (item.number.match(/\./g) || []).length;
         dotHist[d] = (dotHist[d] || 0) + 1;
         if (minDots === null || d < minDots) minDots = d;
+        if (minDotsDotted === null || d < minDotsDotted) minDotsDotted = d;
         if (maxDots === null || d > maxDots) maxDots = d;
       } else if (item.kind === 'bareHeading') {
         bareHeadings++;
@@ -439,15 +478,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (maxDots === null) maxDots = 0;
       } else if (item.kind === 'bracket') brackets++;
       else if (item.kind === 'thaiLetter') thaiLetters++;
-      else if (item.kind === 'plain' && isHeadingStyled(item.p) && !/^\s*[\d\u0E50-\u0E59]/.test(item.text)) unnumbered++;
+      else if (item.kind === 'plain' && seenChapter && isHeadingStyled(item.p)
+               && !/^\s*[\d\u0E50-\u0E59]/.test(item.text)
+               && item.text.length <= 60) unnumbered++;   // ชื่อหัวข้อจริงมักสั้น ต่างจากย่อหน้าเนื้อหา
     });
 
     if (minDots === null) return { detected: false, baseDots: 0, minDots: 0, maxDots: 0,
       dotHist, unnumbered, brackets, thaiLetters, mode: 'unknown', depth: 0 };
 
-    const chapterBased = chapterEvidence(classified.map(i => i.p)).enforceChapter && minDots >= 1;
+    // นับเฉพาะย่อหน้าที่ไม่ใช่สารบัญ และอยู่ในเนื้อหาบทจริง
+    const bodyItems = classified.filter(i => i.kind !== 'toc');
+    const chapterBased = chapterEvidence(bodyItems.map(i => i.p)).enforceChapter && minDotsDotted >= 1;
     let baseDots, mode;
-    if (chapterBased)       { baseDots = minDots;     mode = 'chapter'; }
+    if (chapterBased)         { baseDots = minDotsDotted; mode = 'chapter'; }
     else if (unnumbered >= 2) { baseDots = minDots - 1; mode = 'unnumbered'; }
     else                    { baseDots = minDots;     mode = 'numbered'; }
 
@@ -460,7 +503,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function describeProfile(pf) {
     if (!pf.detected) return 'ไม่พบหัวข้อที่มีเลขกำกับในเอกสารนี้ — ระบบจะไม่ปรับระดับหัวข้อให้';
     const nameMap = { chapter: 'แบบที่ 3 (อิงเลขบท)', unnumbered: 'แบบที่ 2 (หัวข้อใหญ่ไม่มีเลขกำกับ)', numbered: 'แบบที่ 1 (หัวข้อใหญ่ใช้เลขเดี่ยว)' };
-    const topLabel = pf.mode === 'unnumbered' ? 'หัวข้อใหญ่ไม่มีเลข'
+    const topLabel = pf.mode === 'chapter' ? ('x' + '.x'.repeat(pf.baseDots))
+      : pf.mode === 'unnumbered' ? 'หัวข้อใหญ่ไม่มีเลข'
       : (pf.minDots === 0 ? 'เลขเดี่ยว (1. 2. 3.)' : 'x'.concat('.x'.repeat(pf.minDots)));
     const marks = [];
     if (pf.brackets) marks.push('วงเล็บ 1) 2)');
@@ -505,6 +549,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnApproveProposal = document.getElementById('btn-approve-proposal');
   const btnRejectProposal = document.getElementById('btn-reject-proposal');
   const finalExportBox = document.getElementById('final-export-box');
+  // ตรวจว่าเอกสารใช้การจัดกระจายแบบไทยหรือไม่ (ต้นเหตุช่องไฟตัวอักษรไม่สม่ำเสมอ)
+  function countThaiDistribute() {
+    if (!xmlDoc) return 0;
+    let n = 0;
+    Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'jc')).forEach(jc => {
+      const v = jc.getAttributeNS(W_NS,'val') || jc.getAttribute('w:val');
+      if (v === 'thaiDistribute' || v === 'distribute') n++;
+    });
+    if (stylesDoc) {
+      Array.from(stylesDoc.getElementsByTagNameNS(W_NS, 'jc')).forEach(jc => {
+        const v = jc.getAttributeNS(W_NS,'val') || jc.getAttribute('w:val');
+        if (v === 'thaiDistribute' || v === 'distribute') n++;
+      });
+    }
+    return n;
+  }
   const optFixTabs = document.getElementById('opt-fix-tabs');
   const optStaircase = document.getElementById('opt-staircase');
   const optLeftAlign = document.getElementById('opt-left-align');
@@ -522,7 +582,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   async function processDocxFile(file) {
-    if (!file.name.toLowerCase().endsWith('.docx')) { alert('รับเฉพาะไฟล์นามสกุล .docx เท่านั้นครับ'); return; }
+    if (!file.name.toLowerCase().endsWith('.docx')) { showToast('รับเฉพาะไฟล์นามสกุล .docx เท่านั้นครับ'); return; }
+    const MAX_FILE_SIZE = 80 * 1024 * 1024;   // 80 MB
+    if (file.size > MAX_FILE_SIZE) {
+      showToast('ไฟล์ใหญ่เกิน 80 MB (ไฟล์นี้ ' + (file.size / 1048576).toFixed(1) + ' MB) — เบราว์เซอร์อาจค้าง แนะนำให้แยกเป็นบท ๆ ก่อน');
+      return;
+    }
     activeFileName = file.name;
     docFileName.textContent = file.name;
     docFileSize.textContent = (file.size/1024).toFixed(1) + " KB";
@@ -532,6 +597,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const arrayBuffer = await file.arrayBuffer();
       zip = await JSZip.loadAsync(arrayBuffer);
+      if (!zip.file('word/document.xml')) {
+        throw new Error('ไฟล์นี้เป็นไฟล์บีบอัดที่ไม่ใช่เอกสาร Word (.docx) ที่ถูกต้อง');
+      }
       docXmlString = await zip.file('word/document.xml').async('string');
       xmlDoc = new DOMParser().parseFromString(docXmlString, 'application/xml');
       const err = xmlDoc.querySelector('parsererror');
@@ -609,12 +677,18 @@ document.addEventListener('DOMContentLoaded', () => {
       btnStartAnalyze.classList.remove('bg-slate-300','text-slate-500','cursor-not-allowed');
       btnStartAnalyze.classList.add('bg-blue-600','text-white','hover:bg-blue-700');
     } catch (e) {
-      alert('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + e.message);
+      showToast('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + e.message);
       clearSelectedFile();
     }
   }
 
   function clearSelectedFile() {
+    // [P50-D] ต้องล้าง reference ที่ชี้ไปยัง DOM node ของ xmlDoc เดิมให้หมด
+    // ไม่งั้นทำเอกสารหลายเล่มติดกันแล้วหน่วยความจำจะค้างสะสม
+    paraElements = [];
+    detectedStructure = null;
+    structureHint = null;
+    resetEditStats();
     stylesDoc = null; stylesDirty = false;
     zip = null; docXmlString = ""; xmlDoc = null; headingItems = []; defaultTabStopTwips = 720; headingStyleMap = {}; headingStyleSizeMap = {};
     fileInput.value = "";
@@ -644,7 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // พอระบบมาคำนวณ w:ind ให้ใหม่ ตัว Tab เดิมที่ค้างอยู่จะไปบวกซ้อนกับ Staircase Indent ที่คำนวณใหม่
   // ทำให้เยื้องเกินไปกว่าที่ควร ต้องเคลียร์ Tab ที่ค้างอยู่หน้าตัวเลขออกก่อนเสมอ
   function stripLeadingStrayTabs(p) {
-    const runs = Array.from(p.childNodes).filter(n => n.localName === 'r');
+    const runs = effectiveRuns(p);
     let removed = false;
     for (const r of runs) {
       const tNodes = r.getElementsByTagNameNS(W_NS, 't');
@@ -656,6 +730,15 @@ document.addEventListener('DOMContentLoaded', () => {
         removed = true;
       }
     }
+    // รันแรกที่มีข้อความ อาจมี <w:tab/> ค้างอยู่ก่อน <w:t> ในรันเดียวกัน ต้องลบด้วย
+    for (const r of runs) {
+      const hasText = Array.from(r.getElementsByTagNameNS(W_NS, 't')).some(t => (t.textContent || '').length > 0);
+      if (!hasText) continue;
+      const before = r.getElementsByTagNameNS(W_NS, 'tab').length;
+      removeLeadingTabsInRun(r);
+      if (r.getElementsByTagNameNS(W_NS, 'tab').length < before) removed = true;
+      break;
+    }
     return removed;
   }
 
@@ -666,7 +749,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // (chapter/dotted/bracket/bareHeading) เท่านั้น — ไม่แตะย่อหน้าเนื้อหาทั่วไปหรือย่อหน้าในตาราง
   // เพราะย่อหน้าเนื้อหาบางอันอาจตั้งใจเว้นวรรคหน้าเป็น first-line indent แบบมือจริงๆ ก็ได้
   function stripLeadingStraySpaces(p) {
-    const runs = Array.from(p.childNodes).filter(n => n.localName === 'r');
+    const runs = effectiveRuns(p);
     for (const r of runs) {
       const tNodes = Array.from(r.getElementsByTagNameNS(W_NS, 't'));
       const rawText = tNodes.map(t => t.textContent || '').join('');
@@ -735,7 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function normalizeNumberTab(p) {
-    const runs = Array.from(p.childNodes).filter(n => n.localName === 'r');
+    const runs = effectiveRuns(p);
     if (!runs.length) return false;
 
     const segments = [];
@@ -792,7 +875,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ตรวจสถานะ Tab หลังเลขหัวข้อ: ok / missing / extra
   function inspectTabState(p) {
-    const kids = Array.from(p.childNodes).filter(n => n.nodeType === 1 && n.localName === 'r');
+    const kids = effectiveRuns(p);
     let fullText = '';
     kids.forEach(r => Array.from(r.getElementsByTagNameNS(W_NS, 't')).forEach(t => { fullText += t.textContent || ''; }));
     const { m, L } = matchNumberPrefix(fullText);
@@ -841,7 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bold = !!headingStyleSizeMap[lvl].bold;
       }
     }
-    const runs = Array.from(p.childNodes).filter(n => n.localName === 'r');
+    const runs = effectiveRuns(p);
     for (const r of runs) {
       const rPr = r.getElementsByTagNameNS(W_NS, 'rPr')[0];
       if (!rPr) continue;
@@ -908,6 +991,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let skippedNumPr = 0, wideNumber = 0, skippedOutOfScope = 0;
 
     // ลำดับลูกของ <w:pPr> ที่สคีมา OOXML กำหนดให้อยู่ "หลัง" <w:tabs>
+    // ลำดับลูกของ <w:pPr> ที่สคีมากำหนดให้อยู่ "หลัง" <w:ind>
+    const AFTER_IND = ['contextualSpacing','mirrorIndents','suppressOverlap','jc','textDirection',
+      'textAlignment','textboxTightWrap','outlineLvl','divId','cnfStyle','rPr','sectPr','pPrChange'];
     const AFTER_TABS = ['suppressAutoHyphens','kinsoku','wordWrap','overflowPunct','topLinePunct',
       'autoSpaceDE','autoSpaceDN','bidi','adjustRightInd','snapToGrid','spacing','ind',
       'contextualSpacing','mirrorIndents','suppressOverlap','jc','textDirection','textAlignment',
@@ -918,33 +1004,93 @@ document.addEventListener('DOMContentLoaded', () => {
     function setTextTabStop(p, posTwips) {
       let pPr = p.getElementsByTagNameNS(W_NS, 'pPr')[0];
       if (!pPr) { pPr = xmlDoc.createElementNS(W_NS, 'w:pPr'); p.insertBefore(pPr, p.firstChild); }
+      const target = Math.max(posTwips, 0);
       const old = pPr.getElementsByTagNameNS(W_NS, 'tabs')[0];
-      if (old) old.parentNode.removeChild(old);
+      // เก็บจุดหยุดเดิมทั้งหมดไว้ (val/pos/leader) ไม่ทิ้ง เพื่อไม่ให้รูปแบบเดิมของผู้เขียนเสีย
+      const kept = [];
+      if (old) {
+        Array.from(old.getElementsByTagNameNS(W_NS, 'tab')).forEach(t => {
+          const pos = parseInt(t.getAttributeNS(W_NS,'pos') || t.getAttribute('w:pos') || '', 10);
+          const val = t.getAttributeNS(W_NS,'val') || t.getAttribute('w:val') || 'left';
+          const leader = t.getAttributeNS(W_NS,'leader') || t.getAttribute('w:leader') || '';
+          if (!isNaN(pos)) kept.push({ pos, val, leader });
+        });
+        old.parentNode.removeChild(old);
+      }
+      // ถ้ามีจุดหยุดที่ตำแหน่งเดียวกันอยู่แล้ว ใช้ของเดิม ไม่ซ้อนทับ
+      if (!kept.some(t => Math.abs(t.pos - target) < 12)) kept.push({ pos: target, val: 'left', leader: '' });
+      kept.sort((a, b) => a.pos - b.pos);
       const tabsEl = xmlDoc.createElementNS(W_NS, 'w:tabs');
-      const tabEl = xmlDoc.createElementNS(W_NS, 'w:tab');
-      tabEl.setAttributeNS(W_NS, 'w:val', 'left');
-      tabEl.setAttributeNS(W_NS, 'w:pos', String(Math.max(posTwips, 0)));
-      tabsEl.appendChild(tabEl);
+      kept.forEach(t => {
+        const tabEl = xmlDoc.createElementNS(W_NS, 'w:tab');
+        tabEl.setAttributeNS(W_NS, 'w:val', t.val);
+        tabEl.setAttributeNS(W_NS, 'w:pos', String(t.pos));
+        if (t.leader) tabEl.setAttributeNS(W_NS, 'w:leader', t.leader);
+        tabsEl.appendChild(tabEl);
+      });
+      if (kept.length > 1) editStats.tabStopsPreserved++;
       let ref = null;
       for (const node of Array.from(pPr.childNodes)) {
         if (node.nodeType === 1 && AFTER_TABS.indexOf(node.localName) !== -1) { ref = node; break; }
       }
       if (ref) pPr.insertBefore(tabsEl, ref); else pPr.appendChild(tabsEl);
     }
+    // ลบ Tab และช่องว่าง (รวม non-breaking space) ที่ค้างอยู่หน้าข้อความจริงของย่อหน้า
+    // ต้องทำก่อนตั้ง w:ind เสมอ ไม่งั้นระยะที่คำนวณไว้จะถูกบวกซ้ำด้วยตัวคั่นเดิม
+    function stripLeadingWhitespace(p) {
+      const runs = effectiveRuns(p);
+      for (const r of runs) {
+        const kids = Array.from(r.childNodes).filter(n => n.nodeType === 1);
+        let stop = false;
+        for (const k of kids) {
+          if (k.localName === 'rPr' || k.localName === 'lastRenderedPageBreak'
+              || k.localName === 'bookmarkStart' || k.localName === 'bookmarkEnd'
+              || k.localName === 'proofErr' || k.localName === 'noBreakHyphen') continue;
+          if (k.localName === 'tab') { r.removeChild(k); continue; }
+          if (k.localName === 't') {
+            const raw = k.textContent || '';
+            const trimmed = raw.replace(/^[\s\u00A0\u200B]+/, '');
+            if (trimmed !== raw) { k.textContent = trimmed; k.setAttribute('xml:space', 'preserve'); editStats.leadingWsCleaned++; }
+            if (trimmed.length > 0) { stop = true; break; }
+            continue;   // รันนี้ว่างเปล่าหลังตัดแล้ว ไปดูรันถัดไป
+          }
+          stop = true; break;   // เจอเนื้อหาชนิดอื่น (รูปภาพ ฯลฯ) หยุดทันที
+        }
+        if (stop) return;
+      }
+    }
+
     function setFirstLine(p, twips) {
+      stripLeadingWhitespace(p);
       let pPr = p.getElementsByTagNameNS(W_NS, 'pPr')[0];
       if (!pPr) { pPr = xmlDoc.createElementNS(W_NS, 'w:pPr'); p.insertBefore(pPr, p.firstChild); }
       let indEl = pPr.getElementsByTagNameNS(W_NS, 'ind')[0];
-      if (!indEl) { indEl = xmlDoc.createElementNS(W_NS, 'w:ind'); pPr.appendChild(indEl); }
+      if (!indEl) {
+        indEl = xmlDoc.createElementNS(W_NS, 'w:ind');
+        let ref = null;
+        for (const node of Array.from(pPr.childNodes)) {
+          if (node.nodeType === 1 && AFTER_IND.indexOf(node.localName) !== -1) { ref = node; break; }
+        }
+        if (ref) pPr.insertBefore(indEl, ref); else pPr.appendChild(indEl);
+      }
       ['w:left','w:hanging','w:firstLine','w:start'].forEach(a => indEl.removeAttribute(a));
       indEl.setAttributeNS(W_NS, 'w:left', '0');
       indEl.setAttributeNS(W_NS, 'w:firstLine', String(Math.max(twips, 0)));
+      editStats.indentApplied++;
     }
     function editable(p) {
       if (!inScope || stopped) { skippedOutOfScope++; return false; }
       if (isInsideTable(p)) return false;
-      if (hasNumPr(p)) { skippedNumPr++; return false; }
+      if (hasNumPr(p)) skippedNumPr++;   // นับไว้แจ้งผู้ใช้ แต่ยังจัดระยะให้ (w:ind ทับ List Style ได้)
       return true;
+    }
+    function numberingLevel(p) {
+      const pPr = p.getElementsByTagNameNS(W_NS, 'pPr')[0];
+      if (!pPr) return 0;
+      const el = pPr.getElementsByTagNameNS(W_NS, 'ilvl')[0];
+      if (!el) return 0;
+      const v = parseInt(el.getAttributeNS(W_NS,'val') || el.getAttribute('w:val') || '0', 10);
+      return isNaN(v) ? 0 : v;
     }
     function checkWidth(p, label) {
       const f = getRunFont(p);
@@ -987,13 +1133,40 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (hasNumPr(p)) {
+        const styleId = getPStyle(p);
+        const lvlKey = styleId && Object.keys(headingStyleMap).find(l => headingStyleMap[l] === styleId);
+        if (lvlKey) {
+          const numberStart = Math.max(Number(lvlKey) - 2, 0) * INDENT_STEP_TWIPS;
+          currentTextStart = numberStart + INDENT_STEP_TWIPS;
+          if (editable(p)) setFirstLine(p, numberStart);
+        } else if (editable(p)) {
+          setFirstLine(p, currentTextStart + numberingLevel(p) * INDENT_STEP_TWIPS);
+        }
+        return;
+      }
       if (editable(p)) setFirstLine(p, currentTextStart);
     });
 
-    if (skippedNumPr) anomalies.push('ข้าม ' + skippedNumPr + ' ย่อหน้าที่ใช้เลขลำดับอัตโนมัติของ Word (Numbering) เพราะระยะเยื้องถูกกำหนดจาก List Style');
+    if (skippedNumPr) anomalies.push('พบ ' + skippedNumPr + ' ย่อหน้าที่ใช้เลขลำดับอัตโนมัติของ Word — ระบบจัดระยะเยื้องให้แล้วโดยไม่ลบเลขอัตโนมัติทิ้ง (เลขยังไล่ให้เองเหมือนเดิม)');
     if (wideNumber) anomalies.push('พบเลขหัวข้อ ' + wideNumber + ' รายการที่กว้างเกิน 0.5 นิ้ว — ข้อความจะถูกดันเลยจุดสมอไป กรุณาตรวจด้วยตาว่ายังตรงแนวหรือไม่');
     if (hasChapter && skippedOutOfScope) anomalies.push('ข้าม ' + skippedOutOfScope + ' ย่อหน้าที่อยู่นอกเนื้อหาบท (ปก/สารบัญ/บรรณานุกรม/ภาคผนวก) ตามที่ตั้งค่าไว้');
     return anomalies;
+  }
+
+  // คืนรายการ <w:r> ที่ "มีผลจริง" ในย่อหน้า โดยมองทะลุ <w:ins>/<w:hyperlink>
+  // และข้าม <w:del> (ข้อความที่ถูกลบแบบติดตามการแก้ไข)
+  function effectiveRuns(node, out) {
+    out = out || [];
+    Array.from(node.childNodes).forEach(k => {
+      if (k.nodeType !== 1) return;
+      if (k.localName === 'del') return;                 // ถูกลบไปแล้ว ไม่นับ
+      if (k.localName === 'r') { out.push(k); return; }
+      if (['ins','hyperlink','smartTag','sdt','sdtContent','bookmarkStart','customXml'].includes(k.localName)) {
+        effectiveRuns(k, out);
+      }
+    });
+    return out;
   }
 
   function getParaText(p) {
@@ -1013,6 +1186,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // สารบัญอัตโนมัติใช้ข้อความเลขหัวข้อเหมือนเนื้อหา แต่เป็น field/navigation ของ Word
   // ห้ามเปลี่ยนเป็น Heading หรือจัด Tab เพราะจะทำให้รูปแบบสารบัญและเลขหน้าคลาดเคลื่อน
+  const PAGE_NUMBER_ONLY_RE = /^[0-9\u0E50-\u0E59]{1,3}$|^[ก-ฮ]$/;
+  const DOT_LEADER_RE = /[.\u2026]{3,}\s*[0-9\u0E50-\u0E59]{1,3}$|\s{4,}[0-9\u0E50-\u0E59]{1,3}$/;
+
+  // คืนชุดของย่อหน้าที่เป็นรายการในสารบัญที่พิมพ์เอง เพื่อกันไม่ให้ถูกจัดเป็นหัวข้อจริง
+  function collectManualTocParagraphs(paragraphs) {
+    const texts = paragraphs.map(getParaText);
+    const flagged = new Set();
+    for (let i = 0; i < paragraphs.length; i++) {
+      const t = texts[i];
+      if (!t) continue;
+      if (DOT_LEADER_RE.test(t)) { flagged.add(paragraphs[i]); continue; }
+      let j = i + 1;
+      while (j < paragraphs.length && !texts[j]) j++;
+      if (j < paragraphs.length && PAGE_NUMBER_ONLY_RE.test(texts[j])) {
+        flagged.add(paragraphs[i]);
+        flagged.add(paragraphs[j]);
+      }
+    }
+    return flagged;
+  }
+
   function isTocParagraph(p) {
     const styleId = getPStyle(p) || '';
     return /^TOC\d*$/i.test(styleId);
@@ -1056,6 +1250,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3) ข้อความหลังเลขสั้นพอที่จะเป็นชื่อหัวข้อ — ถ้าไม่ผ่าน จะถือเป็นเนื้อหาและรายงานไว้ในรายการเตือน
   function chapterEvidence(paragraphs) {
     let chapter = null, total = 0, matched = 0;
+    const matchedChapters = new Set();
     paragraphs.forEach(p => {
       const text = getParaText(p);
       if (!text) return;
@@ -1064,11 +1259,40 @@ document.addEventListener('DOMContentLoaded', () => {
       const d = NUMBER_RE.exec(text);
       if (d && hasRealHeadingText(text, d[0].length) && chapter !== null) {
         total++;
-        if (thaiDigits(d[1]).split('.')[0] === chapter) matched++;
+        if (thaiDigits(d[1]).split('.')[0] === chapter) { matched++; matchedChapters.add(chapter); }
       }
     });
-    return { enforceChapter: total >= 3 && (matched / total) >= 0.6 };
+    // ต้องมีหลักฐานจากอย่างน้อย 2 บทที่เลขต่างกัน จึงยืนยันได้ว่า "เลขหัวข้อผูกกับเลขบทจริง"
+    return { enforceChapter: total >= 3 && (matched / total) >= 0.6 && matchedChapters.size >= 2 };
   }
+
+  // สแกนล่วงหน้าเพื่อหาเลขที่มีพี่น้องต่อเนื่องกัน = เป็นลำดับข้อจริง
+  function collectNumberedSeries(paragraphs) {
+    const groups = {};
+    paragraphs.forEach(p => {
+      const text = getParaText(p);
+      if (!text) return;
+      const m = NUMBER_RE.exec(text);
+      if (!m || !hasRealHeadingText(text, m[0].length)) return;
+      const num = thaiDigits(m[1]);
+      const parts = num.split('.');
+      const parent = parts.slice(0, -1).join('.');
+      const last = parseInt(parts[parts.length - 1], 10);
+      if (isNaN(last)) return;
+      (groups[parent] = groups[parent] || []).push(last);
+    });
+    const valid = new Set();
+    Object.keys(groups).forEach(parent => {
+      const seq = Array.from(new Set(groups[parent])).sort((a, b) => a - b);
+      // ต้องมีอย่างน้อย 2 ตัวและมีคู่ที่ต่อเนื่องกัน (n, n+1) จึงถือว่าเป็นลำดับข้อจริง
+      const hasRun = seq.some((v, i) => i > 0 && v - seq[i - 1] === 1);
+      if (seq.length >= 2 && hasRun) seq.forEach(v => valid.add(parent + '.' + v));
+    });
+    return valid;
+  }
+
+  // ชื่อหัวข้อจริงมักสั้น ส่วนลำดับข้อจะมีเนื้อหาต่อท้ายยาว
+  function isShortHeadingText(tailLen) { return tailLen <= HEADING_MAX_TEXT_LEN; }
 
   function classifyDocument() {
     const paragraphs = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p'));
@@ -1078,7 +1302,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentChapter = null;
     const DEDENT_THRESHOLD = 200;
     // รอบแรก (structureHint = null) ยังไม่รู้โครงสร้าง จึงไม่บังคับกฎนี้ เพื่อให้เห็นหัวข้อครบก่อน
-    const { enforceChapter: rawEnforce } = chapterEvidence(paragraphs);
+    const numberedSeries = collectNumberedSeries(paragraphs);
+    const confirmedParents = new Set();
+    const manualToc = collectManualTocParagraphs(paragraphs);
+    const { enforceChapter: rawEnforce } = chapterEvidence(paragraphs.filter(p => !manualToc.has(p)));
     const enforceChapter = rawEnforce && !!(structureHint && structureHint.chapterBased);
 
     paragraphs.forEach(p => {
@@ -1086,7 +1313,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!text) { results.push({ p, text, kind: 'empty' }); return; }
       // [P18] ย่อหน้าสารบัญอัตโนมัติของ Word (Style TOC1-TOC9) มีข้อความเหมือนหัวข้อจริง
       // ถ้าไปเปลี่ยน Style หรือแทรก Tab จะทำให้สารบัญและเลขหน้าพัง ต้องข้ามเสมอ
-      if (isTocParagraph(p)) { results.push({ p, text, kind: 'toc' }); return; }
+      if (isTocParagraph(p) || manualToc.has(p)) { results.push({ p, text, kind: 'toc' }); return; }
       const originalIndent = getOriginalFirstLineIndent(p);
       const insideTable = isInsideTable(p);
 
@@ -1111,17 +1338,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const styled = isHeadingStyled(p);
         const tailLen = text.slice(dotted[0].length).trim().length;
         let accept = true, reason = '';
-        if (!styled) {
+        const parentPrefix = number.split('.').slice(0, -1).join('.');
+        const siblingConfirmed = (parentPrefix && confirmedParents.has(parentPrefix))
+                              || numberedSeries.has(thaiDigits(number));
+        if (!styled && !siblingConfirmed) {
           if (tailLen > HEADING_MAX_TEXT_LEN) { accept = false; reason = 'ข้อความหลังเลขยาวเกินกว่าจะเป็นชื่อหัวข้อ'; }
           else if (enforceChapter && currentChapter !== null && thaiDigits(number).split('.')[0] !== currentChapter) {
             accept = false; reason = `เลขขึ้นต้นด้วย ${number.split('.')[0]} ขณะที่อยู่ในบทที่ ${currentChapter}`;
           }
         }
         if (accept) {
+          if (parentPrefix) confirmedParents.add(parentPrefix);
+          confirmedParents.add(number);
           const dots = (number.match(/\./g) || []).length;
           if (dots > maxDots) maxDots = dots;
           prevIndent = originalIndent;
-          results.push({ p, text, kind: 'dotted', number });
+          results.push({ p, text, kind: 'dotted', number,
+            listItem: !styled && (!isShortHeadingText(tailLen)
+              || !!(structureHint && structureHint.unnumberedIsTop)) });
         } else {
           prevIndent = originalIndent;
           results.push({ p, text, kind: 'plain', skippedNumber: number, skipReason: reason });
@@ -1185,12 +1419,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const structure0 = detectStructureProfile(classified);  // สรุปว่าอะไรคือหัวข้อใหญ่
     structureHint = {
       bareIsTop: structure0.detected && structure0.minDots === 0 && structure0.mode !== 'chapter',
-      unnumberedIsTop: structure0.mode === 'unnumbered',
+      unnumberedIsTop: structure0.mode === 'unnumbered' || structure0.unnumbered >= 2,
       chapterBased: structure0.mode === 'chapter'
     };
     classified = classifyDocument();                        // รอบที่ 2: จำแนกใหม่โดยรู้โครงสร้างแล้ว
     const missingLevels = new Set();
     const warningsFromStructure = [];
+    let listItemCount = 0;
     const structure = structure0;
     detectedStructure = structure;
     if (structure.detected) autoBaseDots = structure.baseDots;
@@ -1207,6 +1442,15 @@ document.addEventListener('DOMContentLoaded', () => {
       detectNote.textContent = (offsetOverride === undefined || offsetOverride === null)
         ? `ตรวจจับอัตโนมัติจาก Style เดิมในไฟล์: x.x = Heading${1 + autoDetected}${autoDetected === 2 && !classified.some(i => i.kind==='dotted' && getPStyle(i.p)) ? ' (ไม่พบหลักฐาน ใช้ค่ามาตรฐาน)' : ''}`
         : `เลือกเองโดยผู้ใช้ (ระบบตรวจจับอัตโนมัติแนะนำ Heading${1 + autoDetected})`;
+    }
+    const tocCount = classified.filter(i => i.kind === 'toc').length;
+    if (tocCount) warningsFromStructure.push('ตรวจพบบรรทัดที่เป็นรายการสารบัญ ' + tocCount +
+      ' บรรทัด (ดูจากเลขหน้าที่ตามหลัง) — ระบบข้ามให้ทั้งหมด ไม่แก้ Style และไม่จัดระยะเยื้อง');
+    const insCount = xmlDoc.getElementsByTagNameNS(W_NS, 'ins').length;
+    const delCount = xmlDoc.getElementsByTagNameNS(W_NS, 'del').length;
+    if (insCount + delCount > 0) {
+      warningsFromStructure.push('เอกสารนี้เปิด “ติดตามการแก้ไข (Track Changes)” ค้างไว้ — พบข้อความที่แทรก ' + insCount +
+        ' จุด และที่ลบ ' + delCount + ' จุด ระบบจัดรูปแบบให้ตามเนื้อหาที่เหลืออยู่จริง แต่แนะนำให้กด Accept All Changes ใน Word ก่อน แล้วสแกนใหม่ จะได้ผลตรงที่สุด');
     }
     const structNote = document.getElementById('structure-detect-note');
     if (structNote) structNote.textContent = describeProfile(structure);
@@ -1272,6 +1516,11 @@ document.addEventListener('DOMContentLoaded', () => {
           expectedStyleId, current: currentStyle, status: currentStyle === expectedStyleId ? '✓ ถูกต้อง' : '❌ ผิดพลาด' });
         paraElements.push(p);
         return;
+      }
+
+      if (item.listItem) {
+        listItemCount++;
+        return;   // ลำดับข้อ: จัดเยื้องอย่างเดียว ไม่แตะ Style และไม่เข้าสารบัญ
       }
 
       if (kind === 'dotted' || kind === 'bareHeading') {
@@ -1345,6 +1594,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ตรวจ (แต่ยังไม่แก้) ว่าหัวข้อไหนใช้ช่องว่างแทน Tab บ้าง เพื่อแจ้งเตือนก่อน
+    if (listItemCount) warningsFromStructure.push('พบลำดับข้อของเนื้อหา ' + listItemCount +
+      ' รายการ (เช่น 5.1 5.2 ที่ตามด้วยเนื้อหา) — ระบบจัดระยะเยื้องให้ตามลำดับชั้น แต่ไม่ตั้งเป็นหัวข้อ จึงไม่ขึ้นในสารบัญ');
     classified.filter(i => i.skippedNumber).forEach(i => {
       warnings.push(`ข้ามย่อหน้าที่ขึ้นต้นด้วย "${i.skippedNumber}" (${i.skipReason}) — ถือเป็นเนื้อหา ไม่ใช่หัวข้อ: "${i.text.slice(0, 40)}..." หากเป็นหัวข้อจริง กรุณาตั้ง Heading Style ให้ย่อหน้านั้นใน Word ก่อนแล้วสแกนใหม่`);
     });
@@ -1357,6 +1608,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (tabMissing > 0 || tabExtra > 0) {
       warnings.push(`ตำแหน่ง Tab หลังเลขหัวข้อไม่สม่ำเสมอ: ไม่มี Tab ${tabMissing} รายการ, มี Tab เกิน 1 ตัว ${tabExtra} รายการ — ต้องติ๊ก "จัด Tab หลังเลขหัวข้อและรายการ" ในกล่องขอบเขตการปรับแก้ ระบบจึงจะแก้ให้ (ไม่ได้แก้อัตโนมัติ)`);
+    }
+
+    // ---- ตั้งค่ามาตรฐานของระบบอัตโนมัติ (ผู้ใช้ไม่ต้องเลือกเอง) ----
+    optFixTabs.checked = true;
+    optStaircase.checked = true;
+    optCleanSpaces.checked = true;
+    const thaiDistCount = countThaiDistribute();
+    optLeftAlign.checked = thaiDistCount > 0;
+
+    const numPrCount = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p')).filter(hasNumPr).length;
+    const planEl = document.getElementById('action-plan');
+    if (planEl) {
+      const rows = [];
+      rows.push('<li><b>จัดตำแหน่งหัวข้อและย่อหน้าใหม่ทั้งเนื้อหาบท</b> — เลขหัวข้อแต่ละระดับเยื้องเพิ่มขั้นละ 0.5 นิ้ว และข้อความจะเริ่มตรงแนวเดียวกับชื่อหัวข้อระดับบน</li>');
+      rows.push('<li><b>แทนช่องว่างหลังเลขหัวข้อด้วย Tab</b> — ตัวเลขและชื่อหัวข้อจะตรงคอลัมน์กันทั้งเล่ม</li>');
+      if (thaiDistCount > 0) {
+        rows.push('<li class="text-amber-800"><b>เปลี่ยนการจัดกระจายแบบไทยเป็นชิดซ้าย ' + thaiDistCount + ' จุด</b> — เอกสารนี้ใช้การจัดกระจายแบบไทยซึ่งทำให้ช่องไฟระหว่างตัวอักษรถ่างไม่เท่ากัน หลังแก้ ขอบขวาของข้อความจะไม่เรียบเสมอกันเหมือนเดิม แต่ช่องไฟจะสม่ำเสมอ</li>');
+      }
+      if (numPrCount > 0) {
+        rows.push('<li class="text-amber-800"><b>ปรับระยะเยื้องของรายการเลขอัตโนมัติ ' + numPrCount + ' ย่อหน้า</b> — <u>ไม่ลบเลขอัตโนมัติทิ้ง</u> Word จะยังไล่เลขให้เองเหมือนเดิม เพียงแต่ระยะเยื้องจะถูกกำหนดจากย่อหน้าแทนรูปแบบรายการ</li>');
+      }
+      rows.push('<li><b>ขอบเขต:</b> เฉพาะเนื้อหาตั้งแต่ “บทที่ 1” จนถึงก่อนบรรณานุกรม/ภาคผนวก — ไม่แตะปก คำนำ สารบัญ บรรณานุกรม ภาคผนวก ตาราง และรูปภาพ</li>');
+      rows.push('<li><b>ต้นฉบับไม่ถูกแก้:</b> ระบบสร้างไฟล์ใหม่ให้ดาวน์โหลด ไฟล์เดิมในเครื่องคงเดิมทุกประการ</li>');
+      planEl.innerHTML = rows.join('');
     }
 
     renderProposalTable(headingItems, warnings);
@@ -1440,6 +1715,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnApproveProposal.disabled = true;
     btnApproveProposal.classList.add('opacity-60','cursor-wait');
     const originalButtonText = btnApproveProposal.querySelector('span').textContent;
+    resetEditStats();
     btnApproveProposal.querySelector('span').textContent = 'กำลังสร้างไฟล์ฉบับปรับปรุง…';
 
     try {
@@ -1451,6 +1727,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const level = Number(item.expected.replace('Heading', ''));
       if (!headingStyleMap[level]) {
         skippedStyleItems.push(item.text);
+        editStats.stylesSkipped++;
         return;
       }
       const p = paraElements[headingItems.indexOf(item)];
@@ -1465,6 +1742,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pPr.insertBefore(pStyle, pPr.firstChild);
       }
       pStyle.setAttributeNS(W_NS, 'w:val', item.expectedStyleId);
+      editStats.stylesFixed++;
       item.current = item.expectedStyleId;
       item.status = '✓ แก้ไขแล้ว';
       });
@@ -1473,15 +1751,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (optFixTabs.checked) {
         // [FIX-8] เดิมวิ่งทุกย่อหน้านอกตาราง ทำให้ประโยคเนื้อหาที่ขึ้นต้นด้วยเลขโดนแทรก Tab ด้วย
         classifyDocument()
-          .filter(item => ['chapter', 'dotted', 'bareHeading', 'bracket'].includes(item.kind))
+          .filter(item => ['chapter', 'dotted', 'bareHeading', 'bracket', 'unnumberedHeading'].includes(item.kind))
           .filter(item => !isInsideTable(item.p) && !hasNumPr(item.p))
-          .forEach(item => { stripLeadingStrayTabs(item.p); normalizeNumberTab(item.p); });
+          .forEach(item => { stripLeadingStrayTabs(item.p); if (normalizeNumberTab(item.p)) editStats.tabsNormalized++; });
       }
 
       // 1b-2) ลบเว้นวรรคที่ค้างอยู่หน้าเลขหัวข้อ — สโคปเฉพาะย่อหน้าที่เป็นหัวข้อจริงเท่านั้น (ปลอดภัย ไม่แตะเนื้อหา/ตาราง)
       if (optCleanSpaces.checked) {
         classifyDocument()
-          .filter(item => ['chapter', 'dotted', 'bracket', 'bareHeading'].includes(item.kind))
+          .filter(item => ['chapter', 'dotted', 'bracket', 'bareHeading', 'unnumberedHeading'].includes(item.kind))
           .forEach(item => stripLeadingStraySpaces(item.p));
       }
 
@@ -1532,7 +1810,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (jcList.length) {
           const jcVal = jcList[0].getAttributeNS(W_NS,'val') || jcList[0].getAttribute('w:val');
           if (JUSTIFY_VALUES_TO_FIX.includes(jcVal)) {
-            jcList[0].setAttributeNS(W_NS, 'w:val', 'left');
+            jcList[0].setAttributeNS(W_NS, 'w:val', 'left'); editStats.justifyFixed++;
           }
         }
       }
@@ -1541,7 +1819,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // จึงทำงานเสมอ ไม่ผูกกับ checkbox ชิดซ้าย ต่างจากการแก้ jc ที่เปลี่ยนรูปลักษณ์เอกสารจริง
       // [FIX-6] ภาษาไทยเป็น Complex Script ต้องกำกับที่ w:bidi ไม่ใช่ w:val
       // (w:val คือภาษาของอักษรละติน ถ้าเขียนทับเป็น th-TH ข้อความอังกฤษ/บรรณานุกรมจะถูกตรวจคำผิดด้วยพจนานุกรมไทย)
-      Array.from(p.childNodes).filter(n => n.nodeType === 1 && n.localName === 'r').forEach(r => {
+      effectiveRuns(p).forEach(r => {
         let rPr = r.getElementsByTagNameNS(W_NS, 'rPr')[0];
         if (!rPr) {
           rPr = xmlDoc.createElementNS(W_NS, 'w:rPr');
@@ -1552,7 +1830,7 @@ document.addEventListener('DOMContentLoaded', () => {
           lang = xmlDoc.createElementNS(W_NS, 'w:lang');
           rPr.appendChild(lang);
         }
-        lang.setAttributeNS(W_NS, 'w:bidi', 'th-TH');
+        lang.setAttributeNS(W_NS, 'w:bidi', 'th-TH'); editStats.langSet++;
       });
       });
 
@@ -1564,88 +1842,11 @@ document.addEventListener('DOMContentLoaded', () => {
         box.appendChild(note);
       }
 
-      proposalBox.classList.add('hidden');
-      finalExportBox.classList.remove('hidden');
-      renderOutlinePreview(headingItems);
-      updateStepsIndicator(3);
-    } catch (error) {
-      // [FIX-9] คืนสภาพ XML เป็นต้นฉบับ ไม่ให้การกดซ้ำไปซ้อนทับผลที่แก้ไปแล้วบางส่วน
-      xmlDoc = new DOMParser().parseFromString(docXmlString, 'application/xml');
-      alert('ไม่สามารถสร้างไฟล์ฉบับปรับปรุงได้ (คืนค่าต้นฉบับแล้ว โปรดสแกนใหม่): ' + error.message);
-      btnApproveProposal.disabled = false;
-      btnApproveProposal.classList.remove('opacity-60','cursor-wait');
-      btnApproveProposal.querySelector('span').textContent = originalButtonText;
-    }
-  });
-
-  btnRejectProposal.addEventListener('click', () => {
-    proposalBox.classList.add('hidden');
-    updateStepsIndicator(1);
-  });
-
-  // ---- Export: เขียน XML ที่แก้แล้วกลับเข้า zip แล้วดาวน์โหลดเป็น .docx จริง ----
-  document.getElementById('btn-save-docx').addEventListener('click', async () => {
-    if (!zip || !xmlDoc) return;
-    const serializer = new XMLSerializer();
-    const newXml = serializer.serializeToString(xmlDoc);
-    zip.file('word/document.xml', newXml);
-    if (stylesDoc && stylesDirty) zip.file('word/styles.xml', serializer.serializeToString(stylesDoc));
-    const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = activeFileName.replace(/\.docx$/i, '') + '-aligned.docx';
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  });
-
-  document.getElementById('btn-restart-app').addEventListener('click', clearSelectedFile);
-
-  // ---- Feedback: ดาว 5 ระดับ + ความคิดเห็น ----
-  let selectedRating = 0;
-  const feedbackStars = Array.from(document.querySelectorAll('.feedback-star'));
-  function paintStars(upTo) {
-    feedbackStars.forEach(btn => {
-      const v = Number(btn.dataset.value);
-      btn.classList.toggle('text-amber-400', v <= upTo);
-      btn.classList.toggle('text-slate-300', v > upTo);
-    });
-  }
-  feedbackStars.forEach(btn => {
-    btn.addEventListener('mouseenter', () => paintStars(Number(btn.dataset.value)));
-    btn.addEventListener('mouseleave', () => paintStars(selectedRating));
-    // คลิกดาว = ส่งทันที ไม่ต้องกดปุ่มส่งซ้ำ (ลดขั้นตอนจาก 2 คลิกเหลือ 1 คลิก)
-    btn.addEventListener('click', () => {
-      selectedRating = Number(btn.dataset.value);
-      paintStars(selectedRating);
-      pingEndpoint({ action: 'feedback', rating: selectedRating, comment: '', pageUrl: location.href });
-      document.getElementById('feedback-form').classList.add('hidden');
-      document.getElementById('feedback-thanks').classList.remove('hidden');
-      document.getElementById('feedback-rating-echo').textContent = '★'.repeat(selectedRating) + '☆'.repeat(5 - selectedRating);
-    });
-  });
-
-  document.getElementById('btn-add-comment').addEventListener('click', () => {
-    document.getElementById('feedback-comment-box').classList.remove('hidden');
-  });
-
-  document.getElementById('btn-send-comment').addEventListener('click', () => {
-    const comment = document.getElementById('feedback-comment').value.trim();
-    if (!comment) return;
-    pingEndpoint({ action: 'feedback', rating: selectedRating, comment, pageUrl: location.href });
-    document.getElementById('feedback-comment-box').innerHTML = '<p class="text-[11px] text-emerald-600">ส่งความเห็นแล้ว ขอบคุณครับ 🙏</p>';
-  });
-
-
-
-  function updateStepsIndicator(activeStep) {
-    const steps = [document.getElementById('s-step-1'), document.getElementById('s-step-2'), document.getElementById('s-step-3')];
-    steps.forEach(s => { s.classList.remove('text-blue-600','font-bold'); s.classList.add('text-slate-400'); });
-    steps[activeStep-1].classList.remove('text-slate-400');
-    steps[activeStep-1].classList.add('text-blue-600','font-bold');
-  }
-});
-})();
-</script>
-</body>
-</html>
+      const sumEl = document.getElementById('summary-report');
+      if (sumEl) {
+        const rows = [
+          ['ตั้ง Heading Style ให้หัวข้อ', editStats.stylesFixed + ' รายการ'],
+          ['จัด Tab หลังเลขหัวข้อ', editStats.tabsNormalized + ' รายการ'],
+          ['กำหนดระยะเยื้องย่อหน้า', editStats.indentApplied + ' ย่อหน้า'],
+          ['ลบ Tab/ช่องว่างค้างหน้าข้อความ', editStats.leadingWsCleaned + ' จุด'],
+          ['เปลี่ยนการจัดกระจายเป็นชิดซ้าย', editStats.
