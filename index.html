@@ -1,3 +1,4 @@
+ให้คุณ ตรวจสอบโค้ดนี้
 <!--
   AI DocAligner
   Copyright (c) 2026 Channarong Prasankok (ชาญณรงค์ ประสารกก). All Rights Reserved.
@@ -76,7 +77,7 @@ body{font-family:'Sarabun',sans-serif;background-color:#f1f5f9;}
       <div class="bg-gradient-to-br from-indigo-600 to-blue-500 text-white p-2 rounded-xl shadow-md"><i data-lucide="file-check-2" class="w-6 h-6"></i></div>
       <div>
         <h1 class="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-slate-700">AI DocAligner</h1>
-        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 5.0 &bull; Academic Edition</span>
+        <span class="text-[11px] text-indigo-500 font-medium tracking-wide uppercase">Version 5.2 &bull; Academic Edition</span>
       </div>
     </div>
     <span class="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold shadow-sm flex items-center gap-1">
@@ -337,6 +338,19 @@ document.addEventListener('DOMContentLoaded', () => {
     box.appendChild(el);
     setTimeout(() => { el.style.transition = 'opacity .4s'; el.style.opacity = '0';
       setTimeout(() => el.remove(), 400); }, 7000);
+  }
+
+  // [FIX-A] รอฟอนต์ได้ไม่เกินเวลาที่กำหนด แล้วเดินหน้าต่อไม่ว่าจะโหลดสำเร็จหรือไม่
+  let fontsReady = true;
+  function waitForFontsOrTimeout(ms) {
+    if (!document.fonts || !document.fonts.ready) return Promise.resolve(false);
+    const loading = Promise.all([
+      document.fonts.load('16px "TH Sarabun New"').catch(() => null),
+      document.fonts.load('16px "TH SarabunPSK"').catch(() => null),
+      document.fonts.ready.catch(() => null)
+    ]).then(() => true);
+    const timeout = new Promise(resolve => setTimeout(() => resolve(false), ms));
+    return Promise.race([loading, timeout]);
   }
 
   const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
@@ -1100,7 +1114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     items.forEach(item => {
       const { p, text, kind } = item;
       if (kind === 'chapter') { inScope = true; currentTextStart = BASE_INDENT_TWIPS; return; }
-      if (kind === 'empty' || kind === 'table' || kind === 'toc') return;
+      if (kind === 'empty' || kind === 'table' || kind === 'toc' || kind === 'inlineList') return;
       if (STOP_SECTION_RE.test(text)) { stopped = true; return; }
 
       if (kind === 'unnumberedHeading') {
@@ -1149,7 +1163,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (skippedNumPr) anomalies.push('พบ ' + skippedNumPr + ' ย่อหน้าที่ใช้เลขลำดับอัตโนมัติของ Word — ระบบจัดระยะเยื้องให้แล้วโดยไม่ลบเลขอัตโนมัติทิ้ง (เลขยังไล่ให้เองเหมือนเดิม)');
-    if (wideNumber) anomalies.push('พบเลขหัวข้อ ' + wideNumber + ' รายการที่กว้างเกิน 0.5 นิ้ว — ข้อความจะถูกดันเลยจุดสมอไป กรุณาตรวจด้วยตาว่ายังตรงแนวหรือไม่');
+    if (!fontsReady) anomalies.push('โหลดฟอนต์ตัวอย่างไม่สำเร็จ (เครือข่ายอาจปิดกั้น CDN) — ระบบจัดรูปแบบให้ครบถ้วนตามปกติ เพียงแต่ข้ามการตรวจเตือนเรื่องความกว้างของเลขหัวข้อเท่านั้น');
+    if (fontsReady && wideNumber) anomalies.push('พบเลขหัวข้อ ' + wideNumber + ' รายการที่กว้างเกิน 0.5 นิ้ว — ข้อความจะถูกดันเลยจุดสมอไป กรุณาตรวจด้วยตาว่ายังตรงแนวหรือไม่');
     if (hasChapter && skippedOutOfScope) anomalies.push('ข้าม ' + skippedOutOfScope + ' ย่อหน้าที่อยู่นอกเนื้อหาบท (ปก/สารบัญ/บรรณานุกรม/ภาคผนวก) ตามที่ตั้งค่าไว้');
     return anomalies;
   }
@@ -1294,6 +1309,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // ชื่อหัวข้อจริงมักสั้น ส่วนลำดับข้อจะมีเนื้อหาต่อท้ายยาว
   function isShortHeadingText(tailLen) { return tailLen <= HEADING_MAX_TEXT_LEN; }
 
+  // [P51] ตรวจย่อหน้าที่ "ไล่เลขอยู่ในบรรทัดเดียวกัน" เช่น
+  //   "1) ดนดนดน 2) กยดยด 3) พยดเยิ"  หรือ  "แบ่งเป็น 1. ก 2. ข 3. ค"
+  // กรณีนี้เลขเป็นส่วนหนึ่งของประโยค ไม่ใช่หัวข้อและไม่ใช่ลำดับข้อที่แยกย่อหน้า จึงต้องปล่อยผ่านทั้งหมด
+  // เงื่อนไขต้องครบทั้งสองข้อ เพื่อไม่ให้ไปจับการอ้างอิงปี เช่น "(Dokainish, 2016; Savarese, 2017)"
+  //   1) พบตัวกำกับเลขตั้งแต่ 2 ตัวขึ้นไปในย่อหน้าเดียว
+  //   2) มีเลขที่เรียงต่อเนื่องกันอย่างน้อยหนึ่งคู่ (n, n+1)
+  function isInlineEnumeration(text) {
+    const re = /(?:^|[\s(])([0-9\u0E50-\u0E59]{1,2})[).]\s/g;
+    const nums = [];
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const n = parseInt(thaiDigits(m[1]), 10);
+      if (!isNaN(n)) nums.push(n);
+      if (nums.length > 12) break;
+    }
+    if (nums.length < 2) return false;
+    return nums.some((v, i) => i > 0 && v - nums[i - 1] === 1);
+  }
+
   function classifyDocument() {
     const paragraphs = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p'));
     const results = [];
@@ -1323,6 +1357,12 @@ document.addEventListener('DOMContentLoaded', () => {
         maxDots = 0;
         prevIndent = originalIndent;
         results.push({ p, text, kind: 'chapter' });
+        return;
+      }
+
+      if (isInlineEnumeration(text)) {
+        prevIndent = originalIndent;
+        results.push({ p, text, kind: 'inlineList' });
         return;
       }
 
@@ -1594,6 +1634,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ตรวจ (แต่ยังไม่แก้) ว่าหัวข้อไหนใช้ช่องว่างแทน Tab บ้าง เพื่อแจ้งเตือนก่อน
+    const inlineCount = classified.filter(i => i.kind === 'inlineList').length;
+    if (inlineCount) warningsFromStructure.push('พบย่อหน้าที่ไล่เลขอยู่ในบรรทัดเดียวกัน ' + inlineCount +
+      ' ย่อหน้า (เช่น "1) ... 2) ... 3) ...") — ถือเป็นเนื้อหาปกติ ระบบไม่แตะทั้ง Style ระยะเยื้อง และ Tab');
     if (listItemCount) warningsFromStructure.push('พบลำดับข้อของเนื้อหา ' + listItemCount +
       ' รายการ (เช่น 5.1 5.2 ที่ตามด้วยเนื้อหา) — ระบบจัดระยะเยื้องให้ตามลำดับชั้น แต่ไม่ตั้งเป็นหัวข้อ จึงไม่ขึ้นในสารบัญ');
     classified.filter(i => i.skippedNumber).forEach(i => {
@@ -1717,6 +1760,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const originalButtonText = btnApproveProposal.querySelector('span').textContent;
     resetEditStats();
     btnApproveProposal.querySelector('span').textContent = 'กำลังสร้างไฟล์ฉบับปรับปรุง…';
+    // [FIX-B] กันกรณีติดค้างจนผู้ใช้ไม่รู้ว่าเกิดอะไรขึ้น — แจ้งเตือนและปลดปุ่มคืนให้กดใหม่ได้
+    const watchdog = setTimeout(() => {
+      if (btnApproveProposal.disabled) {
+        showToast('ใช้เวลานานผิดปกติ — หากไม่มีอะไรเกิดขึ้นใน 1 นาที กรุณารีเฟรชหน้าเว็บแล้วลองใหม่ (เอกสารขนาดใหญ่อาจใช้เวลาสักครู่)', 'info');
+      }
+    }, 30000);
 
     try {
       // 1) แก้ pStyle เฉพาะย่อหน้าที่สถานะไม่ถูกต้อง (ไม่แตะ <w:t> ใดๆ)
@@ -1777,15 +1826,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
       // รอฟอนต์และคำนวณให้เสร็จก่อนปลดปุ่มดาวน์โหลด เพื่อไม่ให้ได้ไฟล์ที่จัดระยะไม่ครบ
       if (optStaircase.checked) {
-        if (document.fonts && document.fonts.ready) {
-          try {
-            await Promise.all([
-              document.fonts.load('16px "TH Sarabun New"'),
-              document.fonts.load('16px "TH SarabunPSK"'),
-              document.fonts.ready
-            ]);
-          } catch (_) { /* ใช้ฟอนต์ที่มีอยู่และดำเนินการต่อ */ }
-        }
+        // [FIX-A] เดิม await การโหลดฟอนต์แบบไม่มีกำหนดเวลา ถ้าเครือข่ายบล็อก CDN แบบ "ค้างไว้ไม่ตอบ"
+        // (พบจริงในเครือข่ายโรงพยาบาล) document.fonts.ready จะไม่ resolve เลย ปุ่มค้างตลอดไป
+        // ตั้งแต่เปลี่ยนมาใช้บันไดคงที่ 720 twips ฟอนต์ถูกใช้แค่ "ตรวจเตือน" ว่าเลขกว้างเกิน 0.5 นิ้ว
+        // จึงไม่จำเป็นต้องรอ — ใส่เพดานเวลาไว้แล้วเดินหน้าต่อเสมอ
+        fontsReady = await waitForFontsOrTimeout(2500);
         runStaircase();
       }
 
@@ -1798,149 +1843,4 @@ document.addEventListener('DOMContentLoaded', () => {
       if (optLeftAlign.checked && stylesDoc) {
         Array.from(stylesDoc.getElementsByTagNameNS(W_NS, 'jc')).forEach(jc => {
           const v = jc.getAttributeNS(W_NS, 'val') || jc.getAttribute('w:val');
-          if (JUSTIFY_VALUES_TO_FIX.includes(v)) { jc.setAttributeNS(W_NS, 'w:val', 'left'); stylesDirty = true; }
-        });
-      }
-      const allParas = Array.from(xmlDoc.getElementsByTagNameNS(W_NS, 'p')).filter(p => !isInsideTable(p));
-      allParas.forEach(p => {
-      if (optLeftAlign.checked) {
-      const pPrList = p.getElementsByTagNameNS(W_NS, 'pPr');
-      if (pPrList.length) {
-        const jcList = pPrList[0].getElementsByTagNameNS(W_NS, 'jc');
-        if (jcList.length) {
-          const jcVal = jcList[0].getAttributeNS(W_NS,'val') || jcList[0].getAttribute('w:val');
-          if (JUSTIFY_VALUES_TO_FIX.includes(jcVal)) {
-            jcList[0].setAttributeNS(W_NS, 'w:val', 'left'); editStats.justifyFixed++;
-          }
-        }
-      }
-      }
-      // การกำกับภาษา th-TH ไม่กระทบเนื้อหา/รูปแบบใดๆ (แค่บอก Word ให้ใช้เอนจินภาษาไทยถูกต้อง)
-      // จึงทำงานเสมอ ไม่ผูกกับ checkbox ชิดซ้าย ต่างจากการแก้ jc ที่เปลี่ยนรูปลักษณ์เอกสารจริง
-      // [FIX-6] ภาษาไทยเป็น Complex Script ต้องกำกับที่ w:bidi ไม่ใช่ w:val
-      // (w:val คือภาษาของอักษรละติน ถ้าเขียนทับเป็น th-TH ข้อความอังกฤษ/บรรณานุกรมจะถูกตรวจคำผิดด้วยพจนานุกรมไทย)
-      effectiveRuns(p).forEach(r => {
-        let rPr = r.getElementsByTagNameNS(W_NS, 'rPr')[0];
-        if (!rPr) {
-          rPr = xmlDoc.createElementNS(W_NS, 'w:rPr');
-          r.insertBefore(rPr, r.firstChild);
-        }
-        let lang = rPr.getElementsByTagNameNS(W_NS, 'lang')[0];
-        if (!lang) {
-          lang = xmlDoc.createElementNS(W_NS, 'w:lang');
-          rPr.appendChild(lang);
-        }
-        lang.setAttributeNS(W_NS, 'w:bidi', 'th-TH'); editStats.langSet++;
-      });
-      });
-
-      if (skippedStyleItems.length) {
-        const box = document.getElementById('final-export-box');
-        const note = document.createElement('div');
-        note.className = 'p-3 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800';
-        note.textContent = `ไม่ได้แก้ ${skippedStyleItems.length} หัวข้อ เพราะไฟล์ต้นฉบับไม่มี Heading Style ที่ต้องใช้ โปรดสร้าง Style ใน Word ก่อนแล้วสแกนใหม่`;
-        box.appendChild(note);
-      }
-
-      const sumEl = document.getElementById('summary-report');
-      if (sumEl) {
-        const rows = [
-          ['ตั้ง Heading Style ให้หัวข้อ', editStats.stylesFixed + ' รายการ'],
-          ['จัด Tab หลังเลขหัวข้อ', editStats.tabsNormalized + ' รายการ'],
-          ['กำหนดระยะเยื้องย่อหน้า', editStats.indentApplied + ' ย่อหน้า'],
-          ['ลบ Tab/ช่องว่างค้างหน้าข้อความ', editStats.leadingWsCleaned + ' จุด'],
-          ['เปลี่ยนการจัดกระจายเป็นชิดซ้าย', editStats.justifyFixed + ' จุด'],
-          ['กำกับภาษาไทย (w:bidi)', editStats.langSet + ' run'],
-          ['คงจุดหยุด Tab เดิมของผู้เขียนไว้', editStats.tabStopsPreserved + ' ย่อหน้า']
-        ].filter(r => parseInt(r[1], 10) > 0);
-        if (editStats.stylesSkipped) rows.push(['ข้ามเพราะไฟล์ไม่มี Style ที่ต้องใช้', editStats.stylesSkipped + ' รายการ']);
-        sumEl.innerHTML = '<div class="font-bold text-slate-800 mb-1">สรุปสิ่งที่ระบบทำกับไฟล์นี้</div>' +
-          rows.map(r => '<div class="flex justify-between gap-3"><span>' + r[0] + '</span><span class="font-semibold text-slate-900">' + r[1] + '</span></div>').join('');
-        sumEl.classList.remove('hidden');
-      }
-
-      proposalBox.classList.add('hidden');
-      finalExportBox.classList.remove('hidden');
-      renderOutlinePreview(headingItems);
-      updateStepsIndicator(3);
-    } catch (error) {
-      // [FIX-9] คืนสภาพ XML เป็นต้นฉบับ ไม่ให้การกดซ้ำไปซ้อนทับผลที่แก้ไปแล้วบางส่วน
-      xmlDoc = new DOMParser().parseFromString(docXmlString, 'application/xml');
-      showToast('ไม่สามารถสร้างไฟล์ฉบับปรับปรุงได้ (คืนค่าต้นฉบับแล้ว โปรดสแกนใหม่): ' + error.message);
-      btnApproveProposal.disabled = false;
-      btnApproveProposal.classList.remove('opacity-60','cursor-wait');
-      btnApproveProposal.querySelector('span').textContent = originalButtonText;
-    }
-  });
-
-  btnRejectProposal.addEventListener('click', () => {
-    proposalBox.classList.add('hidden');
-    updateStepsIndicator(1);
-  });
-
-  // ---- Export: เขียน XML ที่แก้แล้วกลับเข้า zip แล้วดาวน์โหลดเป็น .docx จริง ----
-  document.getElementById('btn-save-docx').addEventListener('click', async () => {
-    if (!zip || !xmlDoc) return;
-    const serializer = new XMLSerializer();
-    const newXml = serializer.serializeToString(xmlDoc);
-    zip.file('word/document.xml', newXml);
-    if (stylesDoc && stylesDirty) zip.file('word/styles.xml', serializer.serializeToString(stylesDoc));
-    const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = activeFileName.replace(/\.docx$/i, '') + '-aligned.docx';
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  });
-
-  document.getElementById('btn-restart-app').addEventListener('click', clearSelectedFile);
-
-  // ---- Feedback: ดาว 5 ระดับ + ความคิดเห็น ----
-  let selectedRating = 0;
-  const feedbackStars = Array.from(document.querySelectorAll('.feedback-star'));
-  function paintStars(upTo) {
-    feedbackStars.forEach(btn => {
-      const v = Number(btn.dataset.value);
-      btn.classList.toggle('text-amber-400', v <= upTo);
-      btn.classList.toggle('text-slate-300', v > upTo);
-    });
-  }
-  feedbackStars.forEach(btn => {
-    btn.addEventListener('mouseenter', () => paintStars(Number(btn.dataset.value)));
-    btn.addEventListener('mouseleave', () => paintStars(selectedRating));
-    // คลิกดาว = ส่งทันที ไม่ต้องกดปุ่มส่งซ้ำ (ลดขั้นตอนจาก 2 คลิกเหลือ 1 คลิก)
-    btn.addEventListener('click', () => {
-      selectedRating = Number(btn.dataset.value);
-      paintStars(selectedRating);
-      pingEndpoint({ action: 'feedback', rating: selectedRating, comment: '', pageUrl: location.href });
-      document.getElementById('feedback-form').classList.add('hidden');
-      document.getElementById('feedback-thanks').classList.remove('hidden');
-      document.getElementById('feedback-rating-echo').textContent = '★'.repeat(selectedRating) + '☆'.repeat(5 - selectedRating);
-    });
-  });
-
-  document.getElementById('btn-add-comment').addEventListener('click', () => {
-    document.getElementById('feedback-comment-box').classList.remove('hidden');
-  });
-
-  document.getElementById('btn-send-comment').addEventListener('click', () => {
-    const comment = document.getElementById('feedback-comment').value.trim();
-    if (!comment) return;
-    pingEndpoint({ action: 'feedback', rating: selectedRating, comment, pageUrl: location.href });
-    document.getElementById('feedback-comment-box').innerHTML = '<p class="text-[11px] text-emerald-600">ส่งความเห็นแล้ว ขอบคุณครับ 🙏</p>';
-  });
-
-
-
-  function updateStepsIndicator(activeStep) {
-    const steps = [document.getElementById('s-step-1'), document.getElementById('s-step-2'), document.getElementById('s-step-3')];
-    steps.forEach(s => { s.classList.remove('text-blue-600','font-bold'); s.classList.add('text-slate-400'); });
-    steps[activeStep-1].classList.remove('text-slate-400');
-    steps[activeStep-1].classList.add('text-blue-600','font-bold');
-  }
-});
-})();
-</script>
-</body>
-</html>
+          if (JUSTIFY_VALUES_TO_FIX.
