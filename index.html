@@ -39,6 +39,20 @@ details > summary{list-style:none;}
 details > summary::-webkit-details-marker{display:none;}
 details > summary::before{content:'▸ ';}
 details[open] > summary::before{content:'▾ ';}
+/* คลาสที่ไม่มีใน Tailwind ที่คอมไพล์ไว้ + ส่วนประกอบหน้าจอแบบเรียบง่าย (v5.7) */
+.text-base{font-size:1rem;line-height:1.5rem}
+@media (min-width:1024px){ .lg\:self-start{align-self:flex-start} }
+.da-steps{display:flex;justify-content:space-between;gap:.5rem;background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem 1rem;font-size:.875rem;list-style:none;margin:0 0 1.5rem}
+@media (max-width:359px){.da-steps{font-size:.75rem;padding:.6rem .5rem}}
+.da-steps li{display:flex;align-items:center;gap:.4rem;white-space:nowrap}
+.da-step-dot{width:1.5rem;height:1.5rem;border-radius:9999px;border:2px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0}
+.da-summary{display:flex;align-items:center;gap:.9rem;border-radius:.75rem;padding:.9rem 1rem;border:1px solid}
+.da-summary.is-fix{background:#fffbeb;border-color:#fcd34d;color:#78350f}
+.da-summary.is-ok{background:#f0fdf4;border-color:#bbf7d0;color:#14532d}
+.da-summary.is-none{background:#f8fafc;border-color:#e2e8f0;color:#334155}
+.da-big{font-size:2.25rem;line-height:1;font-weight:800;min-width:2.5rem;text-align:center}
+.da-mark-dot{display:inline-block;width:.6rem;height:.6rem;border-radius:9999px;background:#f59e0b;vertical-align:middle}
+.da-needs-fix{border-left:3px solid #f59e0b;padding-left:.4rem;background:#fffbeb}
 </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
@@ -49,7 +63,7 @@ details[open] > summary::before{content:'▾ ';}
       <div class="bg-gradient-to-br from-indigo-600 to-blue-500 text-white p-2 rounded-xl shadow-md"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6" aria-hidden="true"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m3 15 2 2 4-4"/></svg></div>
       <div>
         <h1 class="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-slate-700">AI DocAligner</h1>
-        <span class="text-[13px] text-indigo-500 font-medium tracking-wide uppercase">Version 5.6 &bull; Academic Edition</span>
+        <span class="text-[13px] text-indigo-500 font-medium">จัดหัวข้อเล่มวิชาการอัตโนมัติ &bull; v5.7</span>
       </div>
     </div>
     <span class="text-[12px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold shadow-sm flex items-center gap-1">
@@ -58,209 +72,211 @@ details[open] > summary::before{content:'▾ ';}
   </div>
 </header>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+<main class="max-w-4xl mx-auto px-4 sm:px-6 py-6 flex-grow w-full">
 
-  <div class="mb-6 bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-around text-xs font-semibold text-slate-400">
-    <div id="s-step-1" class="text-blue-600 flex items-center space-x-2"><span class="w-5 h-5 rounded-full border border-blue-600 inline-flex items-center justify-center">1</span><span>แนบไฟล์เอกสาร Word</span></div>
-    <div id="s-step-2" class="flex items-center space-x-2"><span class="w-5 h-5 rounded-full border border-slate-300 inline-flex items-center justify-center">2</span><span>ตรวจสอบและเสนอรายงานปรับแก้</span></div>
-    <div id="s-step-3" class="flex items-center space-x-2"><span class="w-5 h-5 rounded-full border border-slate-300 inline-flex items-center justify-center">3</span><span>จัดโครงสร้างเสร็จสมบูรณ์ / บันทึกผลงาน</span></div>
-  </div>
+  <ol class="da-steps mb-6" aria-label="ขั้นตอนการใช้งาน">
+    <li id="s-step-1" class="text-blue-600 font-bold"><span class="da-step-dot">1</span><span>เลือกไฟล์</span></li>
+    <li id="s-step-2" class="text-slate-400"><span class="da-step-dot">2</span><span>ตรวจหัวข้อ</span></li>
+    <li id="s-step-3" class="text-slate-400"><span class="da-step-dot">3</span><span>ดาวน์โหลด</span></li>
+  </ol>
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-    <div class="lg:col-span-5 space-y-6">
+    <div class="lg:col-span-7 space-y-6">
 
-      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
-        <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-blue-600" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg>1. แนบไฟล์เอกสารต้นฉบับ (.docx)
-        </h2>
-        <div id="drop-zone" class="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-xl p-6 text-center transition-all cursor-pointer bg-slate-50 relative">
+      <section class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="font-bold text-base text-slate-800">1. เลือกไฟล์ Word</h2>
+        <div id="drop-zone" class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-8 text-center transition-all cursor-pointer bg-slate-50 relative">
           <input type="file" id="file-input" aria-label="เลือกไฟล์เอกสาร Word นามสกุล .docx" accept=".docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
           <div class="space-y-2 pointer-events-none">
-            <div class="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-sm mx-auto text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
-            <div>
-              <p class="text-xs font-semibold text-slate-700">ลากไฟล์ Word มาวาง หรือคลิกเพื่อเลือกไฟล์</p>
-              <p class="text-[12px] text-slate-400 mt-0.5">รับเฉพาะรูปแบบ .docx เท่านั้น</p>
-            </div>
+            <div class="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-sm mx-auto text-blue-600"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg></div>
+            <p class="text-sm font-semibold text-slate-700">ลากไฟล์มาวาง หรือแตะเพื่อเลือก</p>
+            <p class="text-[13px] text-slate-400">ไฟล์ .docx</p>
           </div>
         </div>
-        <div id="env-status" class="text-[13px] text-slate-500">กำลังตรวจสอบความพร้อมของระบบ…</div>
+        <div id="env-status" class="hidden text-[13px] text-slate-500"></div>
         <div id="file-info-bar" class="hidden p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
           <div class="flex items-center space-x-2.5 overflow-hidden">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-blue-600 flex-shrink-0" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/></svg>
             <div class="overflow-hidden">
-              <p id="doc-file-name" class="text-xs font-semibold text-slate-800 truncate">document.docx</p>
+              <p id="doc-file-name" class="text-sm font-semibold text-slate-800 truncate">document.docx</p>
               <p id="doc-file-size" class="text-[12px] text-slate-500">0 KB</p>
             </div>
           </div>
-          <button id="btn-delete-file" aria-label="ลบไฟล์ที่แนบไว้" class="text-slate-400 hover:text-red-500 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          <button id="btn-delete-file" aria-label="ลบไฟล์ที่แนบไว้" title="เปลี่ยนไฟล์" class="text-slate-400 hover:text-red-500 transition-colors p-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
         </div>
-        <button id="btn-start-analyze" aria-label="สแกนและตรวจสอบโครงสร้างหัวข้อของเอกสาร" disabled class="w-full bg-slate-300 text-slate-500 font-bold py-2.5 rounded-lg text-xs flex items-center justify-center space-x-2 transition-all cursor-not-allowed">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg><span>สแกนและตรวจสอบโครงสร้างหัวข้อ</span>
+        <button id="btn-start-analyze" aria-label="ตรวจโครงสร้างหัวข้ออีกครั้ง" disabled class="hidden w-full bg-slate-300 text-slate-500 font-bold py-3 rounded-lg text-sm flex items-center justify-center space-x-2 transition-all cursor-not-allowed">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg><span>ตรวจอีกครั้ง</span>
         </button>
-        <p class="text-[12px] text-slate-500 leading-relaxed">ระบบอ่านสไตล์ (Heading Style) จากไฟล์ .docx โดยตรงและใช้กฎตายตัว (ไม่ใช้ AI) ผลลัพธ์จึงเหมือนเดิมทุกครั้งที่ใช้ไฟล์เดียวกัน <b class="text-slate-700">ไฟล์เอกสารของคุณถูกประมวลผลในเบราว์เซอร์ ไม่ถูกอัปโหลดไปที่ใด</b></p>
-        <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[12px] text-amber-800 leading-relaxed">
-          <span class="font-bold">⚠ ก่อนใช้งาน:</span> ระบบสร้าง<b>ไฟล์ใหม่</b>ให้ดาวน์โหลด ไม่แก้ไฟล์ต้นฉบับของคุณ ในขั้นตอนที่ 2 ระบบจะแจ้งรายการที่จะทำก่อนเสมอ (เช่น การเปลี่ยนการจัดกระจายแบบไทยเป็นชิดซ้าย และการปรับระยะเยื้องของรายการเลขอัตโนมัติ) กรุณาอ่านก่อนกดยืนยัน และเปิดไฟล์ผลลัพธ์ใน Word ตรวจก่อนนำไปใช้งานจริง
-        </div>
-      </div>
+        <p class="text-[13px] text-slate-500">🔒 ไฟล์ไม่ถูกอัปโหลด · ได้ไฟล์ใหม่ ต้นฉบับไม่ถูกแก้</p>
+      </section>
 
-      <div id="proposal-box" role="region" aria-live="polite" aria-label="รายการแก้ไขที่ตรวจพบ" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-        <div class="border-b pb-2 flex justify-between items-center">
-          <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5 text-orange-600">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-orange-500" aria-hidden="true"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>2. รายการแก้ไขที่ตรวจพบ
-          </h2>
-          <span class="text-[12px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">รอผู้ใช้กดอนุมัติ</span>
-        </div>
-        <div class="p-2.5 bg-violet-50 border border-violet-200 rounded-lg text-[13px] space-y-1.5">
-          <label class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 font-semibold text-violet-900">
-            <span>รูปแบบการจัดหัวข้อ:</span>
-            <select id="opt-format-profile" class="w-full min-w-0 text-[13px] border border-violet-300 rounded px-1.5 py-1 bg-white sm:flex-1"></select>
-          </label>
-          <p class="text-[12px] text-violet-700">หัวข้อระดับถัดไปเริ่มตรงกับอักษรตัวแรกของชื่อหัวข้อระดับก่อนหน้า และย่อหน้าเนื้อหาเริ่มตรงกับอักษรตัวแรกของหัวข้อตนเอง</p>
-          <p class="text-[12px] text-violet-600">ปรับเฉพาะเนื้อหาในบท ไม่แตะปก สารบัญ บรรณานุกรม และภาคผนวก</p>
-          <p id="structure-detect-note" class="text-[12px] text-violet-900 bg-white/70 rounded px-2 py-1 border border-violet-200"></p>
-        </div>
-        <div class="p-2.5 bg-indigo-50 border border-indigo-200 rounded-lg text-[13px] space-y-1.5">
-          <label class="flex flex-wrap items-center gap-2 font-semibold text-indigo-900">
-            <span>หัวข้อ x.x (1 จุด) ควรเป็นระดับ:</span>
-            <select id="opt-dots-level" class="text-[13px] border border-indigo-300 rounded px-1.5 py-0.5 bg-white">
-              <option value="2">Heading2</option>
-              <option value="3">Heading3</option>
-              <option value="4">Heading4</option>
-            </select>
-            <button type="button" id="btn-reset-offset" title="กลับไปที่ค่าที่ระบบตรวจพบจาก Style เดิมในไฟล์" class="text-[12px] text-indigo-500 hover:text-indigo-700 underline">↺ คืนค่าตามที่ระบบตรวจพบ</button>
-          </label>
-          <p id="offset-detect-note" class="text-[12px] text-indigo-600"></p>
-          <p id="offset-size-note" class="text-[12px] text-slate-500"></p>
-          <p id="offset-no-headings-note" class="hidden text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 flex items-start gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 mt-0.5 flex-shrink-0" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span id="offset-no-headings-text"></span>
-          </p>
-          <p id="offset-preview" class="text-[12px] text-indigo-800 font-mono bg-white rounded border border-indigo-100 px-2 py-1"></p>
-        </div>
-        <div class="overflow-x-auto max-h-[280px] overflow-y-auto">
-          <table class="w-full text-[13px] text-left border-collapse">
-            <thead class="sticky top-0 bg-slate-50">
-              <tr class="bg-slate-50 text-slate-600">
-                <th class="p-2 border text-center"><input type="checkbox" id="row-apply-all" class="h-4 w-4" aria-label="เลือกทุกหัวข้อที่จะตั้ง Style"></th>
-                <th class="p-2 border text-center">ที่</th>
-                <th class="p-2 border hidden sm:table-cell">อยู่ใน</th>
-                <th class="p-2 border">ข้อความหัวข้อ</th>
-                <th class="p-2 border text-center">ควรเป็น</th>
-                <th class="p-2 border text-center">สไตล์เดิม</th>
-                <th class="p-2 border text-center">สถานะ</th>
-              </tr>
-            </thead>
-            <tbody id="proposal-table-rows" class="divide-y divide-slate-100"></tbody>
-          </table>
-        </div>
-        <p class="text-[12px] text-slate-500 leading-relaxed -mt-2">ติ๊กออกเพื่อไม่ให้ระบบเปลี่ยน Style ของหัวข้อนั้น (การจัดตำแหน่งยังทำทั้งเล่มเพื่อให้ต่อเนื่องกัน) · “ที่” คือลำดับหัวข้อในเอกสาร ใช้ Ctrl+F ค้นข้อความหัวข้อใน Word เพื่อไปยังตำแหน่งนั้น</p>
-        <div id="orphan-warnings" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-lg text-[13px] text-amber-800 space-y-1">
-          <div class="font-bold flex items-center gap-1 sticky top-0 bg-amber-50 pb-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg> ตรวจพบความผิดปกติของลำดับ <span id="warning-count" class="font-normal text-amber-600"></span></div>
-          <ul id="warning-list" class="list-disc pl-4 space-y-1 max-h-[220px] overflow-y-auto pr-1"></ul>
-        </div>
-        <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-[13px] text-slate-700 space-y-2" aria-live="polite">
-          <div class="font-bold text-blue-900 flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5" aria-hidden="true"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg> ระบบจะดำเนินการดังนี้
+      <section id="proposal-box" role="region" aria-live="polite" aria-label="ผลการตรวจ" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <h2 class="font-bold text-base text-slate-800">2. ผลการตรวจ</h2>
+
+        <div id="scan-summary" class="da-summary">
+          <div id="sum-big" class="da-big"></div>
+          <div>
+            <p id="sum-title" class="font-bold text-sm"></p>
+            <p id="sum-sub" class="text-[13px] mt-0.5"></p>
           </div>
-          <ul id="action-plan" class="list-disc pl-4 space-y-1.5 leading-relaxed"></ul>
         </div>
-        <div id="scope-box" class="hidden rounded-lg border border-amber-300 bg-amber-50 p-3 text-[13px] text-amber-900 space-y-2" role="group" aria-label="กำหนดขอบเขตการปรับแก้">
-          <div class="font-bold">⚠ กำหนดขอบเขต — ไม่พบคำว่า “บทที่” ในเอกสารนี้</div>
-          <p class="leading-relaxed">ระบบไม่รู้ว่าเนื้อหาเริ่มตรงไหน จึงให้คุณเลือกจุดเริ่มปรับ ส่วนก่อนจุดเริ่ม (เช่น ปก บทคัดย่อ คำนำ) จะไม่ถูกแตะ และระบบหยุดเมื่อถึงบรรณานุกรม/เอกสารอ้างอิง/ภาคผนวก</p>
-          <select id="scope-start" aria-label="เลือกจุดเริ่มปรับ" class="w-full text-[13px] border border-amber-300 rounded px-2 py-1.5 bg-white"></select>
+
+        <p id="plan-chips" class="text-[13px] text-slate-600 leading-relaxed"></p>
+
+        <div id="scope-box" class="hidden rounded-lg border border-amber-300 bg-amber-50 p-3 text-[13px] text-amber-900 space-y-2" role="group" aria-label="เลือกจุดเริ่มจัดรูปแบบ">
+          <div class="font-bold">ไม่พบคำว่า “บทที่” — เลือกจุดเริ่มจัด</div>
+          <select id="scope-start" aria-label="เลือกจุดเริ่มจัด" class="w-full text-[13px] border border-amber-300 rounded px-2 py-1.5 bg-white"></select>
+          <p class="text-[12px]">ส่วนก่อนหน้า (ปก คำนำ) และตั้งแต่บรรณานุกรมจะไม่ถูกแตะ</p>
         </div>
-        <details id="adv-options" class="rounded-lg border border-slate-200 bg-white text-[13px]">
-          <summary class="cursor-pointer select-none px-3 py-2 font-semibold text-slate-700">ปรับแต่งขั้นสูง (ปกติไม่ต้องเปิด)</summary>
-          <div class="px-3 pb-3 space-y-2 text-slate-700">
-            <p class="text-slate-500 leading-relaxed">ระบบติ๊กค่ามาตรฐานให้อัตโนมัติจากการสแกนเอกสารนี้ ยกเลิกติ๊กได้หากไม่ต้องการ แผนงานด้านบนจะเปลี่ยนตามทันที</p>
-            <label class="flex items-start gap-2 cursor-pointer">
-              <input id="opt-fix-tabs" type="checkbox" class="mt-1 h-4 w-4">
-              <span><b>แทนช่องว่างหลังเลขหัวข้อด้วย Tab</b> — ให้ตัวเลขและชื่อหัวข้อตรงคอลัมน์กัน (เฉพาะหัวข้อในขอบเขต)</span>
-            </label>
-            <label class="flex items-start gap-2 cursor-pointer">
-              <input id="opt-staircase" type="checkbox" class="mt-1 h-4 w-4">
-              <span><b>จัดตำแหน่งและระยะเยื้องตามจุดอ้างอิง</b> — ทั้งหัวข้อและย่อหน้าเนื้อหาในขอบเขต (ไม่แตะตาราง)</span>
-            </label>
-            <label class="flex items-start gap-2 cursor-pointer">
-              <input id="opt-left-align" type="checkbox" class="mt-1 h-4 w-4">
-              <span><b>เปลี่ยนการจัดกระจาย/ชิดสองข้างเป็นชิดซ้าย</b> — ทั้งไฟล์ นอกตาราง ลดปัญหาช่องไฟไทยถ่างไม่เท่ากัน</span>
-            </label>
-            <label class="flex items-start gap-2 cursor-pointer">
-              <input id="opt-clean-spaces" type="checkbox" class="mt-1 h-4 w-4">
-              <span><b>ลบ Tab/ช่องว่างที่ค้างอยู่หน้าเลขหัวข้อ</b> — เฉพาะหัวข้อที่ตรวจพบในขอบเขต</span>
-            </label>
+
+        <details id="orphan-warnings" class="hidden rounded-lg border border-amber-200 bg-amber-50 text-[13px] text-amber-800">
+          <summary class="cursor-pointer select-none px-3 py-2 font-bold">ข้อสังเกต <span id="warning-count" class="font-normal"></span></summary>
+          <ul id="warning-list" class="list-disc pl-4 space-y-1 max-h-[220px] overflow-y-auto px-3 pb-3 pr-1"></ul>
+        </details>
+
+        <div class="space-y-2">
+          <button id="btn-approve-proposal" class="w-full bg-green-600 hover:bg-green-700 text-white text-base py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg><span>จัดรูปแบบให้เลย</span>
+          </button>
+          <button id="btn-reject-proposal" class="w-full text-slate-500 hover:bg-slate-50 text-[13px] py-1.5 rounded-lg">ยกเลิก</button>
+        </div>
+
+        <details id="table-details" class="rounded-lg border border-slate-200 bg-white text-[13px]">
+          <summary class="cursor-pointer select-none px-3 py-2 font-semibold text-slate-700">ดูรายการหัวข้อ <span id="table-count" class="font-normal text-slate-500"></span></summary>
+          <div class="px-3 pb-3 space-y-2">
+            <p class="text-[12px] text-slate-500">ติ๊กออก = ไม่เปลี่ยน Style หัวข้อนั้น</p>
+            <div class="overflow-x-auto max-h-[280px] overflow-y-auto">
+              <table class="w-full text-[13px] text-left border-collapse">
+                <thead class="sticky top-0 bg-slate-50">
+                  <tr class="bg-slate-50 text-slate-600">
+                    <th class="p-2 border text-center"><input type="checkbox" id="row-apply-all" class="h-4 w-4" aria-label="เลือกทุกหัวข้อที่จะตั้ง Style"></th>
+                    <th class="p-2 border text-center">ที่</th>
+                    <th class="p-2 border hidden sm:table-cell">อยู่ใน</th>
+                    <th class="p-2 border">หัวข้อ</th>
+                    <th class="p-2 border text-center">ควรเป็น</th>
+                    <th class="p-2 border text-center">เดิม</th>
+                    <th class="p-2 border text-center">สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody id="proposal-table-rows" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
           </div>
         </details>
-        <div class="pt-2 flex space-x-2">
-          <button id="btn-reject-proposal" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-lg font-medium transition-all">ยกเลิก</button>
-          <button id="btn-approve-proposal" class="w-2/3 bg-green-600 hover:bg-green-700 text-white text-xs py-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg><span>จัดรูปแบบและสร้างไฟล์ใหม่</span>
-          </button>
-        </div>
-        <p id="no-changes-note" class="hidden text-[13px] text-green-700 bg-green-50 border border-green-200 rounded-lg p-2">ตรวจสอบแล้ว — Style ทุกหัวข้อถูกต้องตรงตามระดับที่ควรเป็น ไม่มีจุดที่ต้องแก้ไข</p>
-      </div>
 
-      <div id="final-export-box" role="region" aria-live="polite" aria-label="ผลดำเนินการ" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
-        <h2 class="font-bold text-sm text-slate-800 flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-green-600" aria-hidden="true"><path d="m16 16 2 2 4-4"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="m7.5 4.27 9 5.15"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg>3. ผลดำเนินการเสร็จสมบูรณ์</h2>
-        <p class="text-xs text-slate-500">สร้างไฟล์ใหม่จากต้นฉบับเดิมแล้ว การปรับเพิ่มเติมจะทำเฉพาะรายการที่เลือกไว้ในขั้นตอนก่อนหน้า โปรดเปิดตรวจใน Microsoft Word ก่อนส่งเข้าระบบ</p>
-        <div id="summary-report" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-lg text-[13px] text-slate-700 space-y-1"></div>
-        <div class="grid grid-cols-2 gap-3 pt-2">
-          <button id="btn-save-docx" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg><span>ดาวน์โหลดไฟล์ .DOCX</span>
-          </button>
-          <button id="btn-restart-app" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg><span>เริ่มทำเล่มใหม่</span>
-          </button>
+        <details id="adv-options" class="rounded-lg border border-slate-200 bg-white text-[13px]">
+          <summary class="cursor-pointer select-none px-3 py-2 font-semibold text-slate-700">ตั้งค่าเพิ่มเติม <span class="font-normal text-slate-500">(ปกติไม่ต้องเปิด)</span></summary>
+          <div class="px-3 pb-3 space-y-3 text-slate-700">
+            <div class="p-2.5 bg-violet-50 border border-violet-200 rounded-lg space-y-1.5">
+              <label class="flex flex-col gap-1 font-semibold text-violet-900">
+                <span>รูปแบบเล่ม</span>
+                <select id="opt-format-profile" class="w-full min-w-0 text-[13px] border border-violet-300 rounded px-1.5 py-1 bg-white"></select>
+              </label>
+              <p id="structure-detect-note" class="text-[12px] text-violet-900"></p>
+            </div>
+            <div class="p-2.5 bg-indigo-50 border border-indigo-200 rounded-lg space-y-1.5">
+              <label class="flex flex-wrap items-center gap-2 font-semibold text-indigo-900">
+                <span>หัวข้อ x.x ควรเป็น</span>
+                <select id="opt-dots-level" class="text-[13px] border border-indigo-300 rounded px-1.5 py-0.5 bg-white">
+                  <option value="2">Heading2</option>
+                  <option value="3">Heading3</option>
+                  <option value="4">Heading4</option>
+                </select>
+                <button type="button" id="btn-reset-offset" title="กลับไปที่ค่าที่ระบบตรวจพบ" class="text-[12px] text-indigo-500 hover:text-indigo-700 underline">↺ ค่าที่ระบบตรวจพบ</button>
+              </label>
+              <p id="offset-detect-note" class="text-[12px] text-indigo-600"></p>
+              <p id="offset-size-note" class="text-[12px] text-slate-500"></p>
+              <p id="offset-no-headings-note" class="hidden text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1"><span id="offset-no-headings-text"></span></p>
+              <p id="offset-preview" class="text-[12px] text-indigo-800 font-mono bg-white rounded border border-indigo-100 px-2 py-1"></p>
+            </div>
+            <div class="space-y-2">
+              <p class="font-semibold">เลือกสิ่งที่ให้ระบบทำ</p>
+              <label class="flex items-start gap-2 cursor-pointer">
+                <input id="opt-staircase" type="checkbox" class="mt-1 h-4 w-4">
+                <span><b>จัดระยะเยื้อง</b> หัวข้อและย่อหน้า (ไม่แตะตาราง)</span>
+              </label>
+              <label class="flex items-start gap-2 cursor-pointer">
+                <input id="opt-fix-tabs" type="checkbox" class="mt-1 h-4 w-4">
+                <span><b>เว้นหลังเลขหัวข้อให้เท่ากัน</b> (ใช้ Tab)</span>
+              </label>
+              <label class="flex items-start gap-2 cursor-pointer">
+                <input id="opt-clean-spaces" type="checkbox" class="mt-1 h-4 w-4">
+                <span><b>ลบช่องว่างค้าง</b> หน้าเลขหัวข้อ</span>
+              </label>
+              <label class="flex items-start gap-2 cursor-pointer">
+                <input id="opt-left-align" type="checkbox" class="mt-1 h-4 w-4">
+                <span><b>เปลี่ยนจัดกระจายเป็นชิดซ้าย</b> ช่องไฟไทยจะสม่ำเสมอ</span>
+              </label>
+            </div>
+            <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-1.5" aria-live="polite">
+              <p class="font-bold text-blue-900">รายละเอียดสิ่งที่ระบบจะทำ</p>
+              <ul id="action-plan" class="list-disc pl-4 space-y-1.5 leading-relaxed"></ul>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section id="final-export-box" role="region" aria-live="polite" aria-label="ผลดำเนินการ" class="hidden bg-white p-5 rounded-xl border border-green-200 shadow-sm space-y-4">
+        <div class="text-center space-y-1">
+          <div class="text-3xl" aria-hidden="true">✅</div>
+          <h2 class="font-bold text-base text-slate-800">3. เสร็จแล้ว</h2>
+          <p class="text-[13px] text-slate-500">เปิดตรวจใน Word อีกครั้งก่อนส่งงาน</p>
         </div>
-      </div>
+        <button id="btn-save-docx" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-base flex items-center justify-center gap-2 transition-all shadow-md">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg><span>ดาวน์โหลดไฟล์ Word</span>
+        </button>
+        <details class="rounded-lg border border-slate-200 bg-slate-50 text-[13px]">
+          <summary class="cursor-pointer select-none px-3 py-2 font-semibold text-slate-700">ดูสิ่งที่ระบบแก้</summary>
+          <div id="summary-report" class="hidden px-3 pb-3 text-slate-700 space-y-1"></div>
+        </details>
+        <button id="btn-restart-app" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-lg text-sm flex items-center justify-center gap-1.5 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg><span>เริ่มไฟล์ใหม่</span>
+        </button>
+      </section>
 
     </div>
 
-    <div class="lg:col-span-7 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <aside class="lg:col-span-5 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden lg:self-start">
       <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center gap-2">
-        <div class="flex items-center space-x-2 text-sm font-semibold text-slate-700">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-slate-400" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg><span>ตัวอย่างโครงสร้างหัวข้อ</span>
-        </div>
-        <button id="btn-toggle-preview" type="button" aria-expanded="false" aria-controls="preview-body" class="lg:hidden text-[13px] text-blue-600 underline">แสดงตัวอย่าง</button>
+        <div class="text-sm font-semibold text-slate-700">โครงหัวข้อ</div>
+        <button id="btn-toggle-preview" type="button" aria-expanded="false" aria-controls="preview-body" class="lg:hidden text-[13px] text-blue-600 underline">แสดง</button>
       </div>
-      <p class="px-4 py-2 text-[12px] leading-relaxed text-slate-500 bg-amber-50/50 border-b border-slate-100">แสดงเฉพาะ<b>ลำดับชั้นของหัวข้อ</b>ที่ระบบตรวจพบ — <b>ไม่ใช่ภาพหน้ากระดาษ Word จริง</b> (ระยะเยื้อง ช่องว่าง และฟอนต์จริงดูได้จากไฟล์ผลลัพธ์ใน Word)</p>
-      <div id="preview-body" class="flex-grow p-4 sm:p-6 bg-slate-100 flex justify-center">
-        <div class="w-full max-w-[500px] min-h-[200px] lg:min-h-[640px] bg-white border border-slate-300 p-6 sm:p-8 shadow-sm relative text-xs">
+      <div id="preview-body" class="flex-grow p-4 bg-slate-100">
+        <div class="w-full min-h-[200px] bg-white border border-slate-300 p-5 shadow-sm relative text-xs">
           <div id="preview-empty" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-slate-400">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mb-2" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
-            <p class="font-bold text-slate-700 text-sm">ยังไม่มีโครงข้อมูลสำหรับการพรีวิว</p>
-            <p class="text-[12px] max-w-[250px] mt-1">กรุณาแนบไฟล์ Word (.docx) แล้วกดสแกน</p>
+            <p class="text-[13px]">เลือกไฟล์เพื่อดูโครงหัวข้อ</p>
           </div>
           <div id="preview-render-area" class="hidden thai-document-style space-y-1"></div>
         </div>
+        <p id="preview-legend" class="hidden mt-2 text-[12px] text-slate-500"><span class="da-mark-dot" aria-hidden="true"></span> ต้องแก้ · ไม่ใช่ภาพหน้ากระดาษจริง</p>
       </div>
-    </div>
+    </aside>
 
   </div>
 </main>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 w-full">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 pb-6 w-full">
   <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
     <div id="feedback-form" class="text-center space-y-2">
-      <p class="text-xs text-slate-600">ช่วยบอกหน่อยได้มั้ยครับ ใช้แล้วเป็นไงบ้าง? 🙏</p>
+      <p class="text-sm text-slate-600">ใช้แล้วเป็นไงบ้าง? แตะดาวได้เลย 🙏</p>
       <div id="feedback-stars" class="flex justify-center gap-1.5">
-        <button type="button" aria-label="ให้คะแนน" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="1">★</button>
-        <button type="button" aria-label="ให้คะแนน" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="2">★</button>
-        <button type="button" aria-label="ให้คะแนน" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="3">★</button>
-        <button type="button" aria-label="ให้คะแนน" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="4">★</button>
-        <button type="button" aria-label="ให้คะแนน" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="5">★</button>
+        <button type="button" aria-label="ให้ 1 ดาว" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="1">★</button>
+        <button type="button" aria-label="ให้ 2 ดาว" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="2">★</button>
+        <button type="button" aria-label="ให้ 3 ดาว" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="3">★</button>
+        <button type="button" aria-label="ให้ 4 ดาว" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="4">★</button>
+        <button type="button" aria-label="ให้ 5 ดาว" class="feedback-star text-3xl text-slate-300 hover:text-amber-400 hover:scale-125 transition-all" data-value="5">★</button>
       </div>
-      <p class="text-[12px] text-slate-500">การแตะดาวจะส่ง<b>เฉพาะคะแนน</b>ไปยังผู้พัฒนาทันที (ไม่มีข้อมูลเอกสารของคุณ) ให้คะแนนตอนไหนก็ได้</p>
+      <p class="text-[12px] text-slate-400">ส่งเฉพาะคะแนน ไม่ส่งข้อมูลเอกสาร</p>
     </div>
     <div id="feedback-thanks" class="hidden text-center space-y-3">
-      <div class="text-3xl">🎉</div>
-      <p class="text-sm font-bold text-slate-700">ขอบคุณครับ!</p>
-      <p id="feedback-rating-echo" class="text-xs text-amber-500"></p>
-      <button id="btn-add-comment" class="text-[13px] text-blue-600 underline">+ อยากบอกอะไรเพิ่มเติม (ไม่บังคับ)</button>
+      <p class="text-sm font-bold text-slate-700">ขอบคุณครับ! 🎉</p>
+      <p id="feedback-rating-echo" class="text-sm text-amber-500"></p>
+      <button id="btn-add-comment" class="text-[13px] text-blue-600 underline">+ เขียนความเห็น (ไม่บังคับ)</button>
       <div id="feedback-comment-box" class="hidden pt-2 text-left">
-        <p class="text-[12px] text-amber-700 mb-1">ข้อความที่พิมพ์จะถูกส่งถึงผู้พัฒนา กรุณาอย่าใส่ข้อมูลผู้ป่วย ชื่อ-นามสกุล หรือข้อมูลส่วนบุคคล</p>
-        <textarea id="feedback-comment" rows="2" placeholder="พิมพ์ความเห็นตรงนี้ได้เลย..." class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:outline-none focus:border-blue-400 resize-none"></textarea>
-        <button id="btn-send-comment" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1.5 px-4 rounded-lg">ส่ง</button>
+        <p class="text-[12px] text-amber-700 mb-1">ห้ามใส่ข้อมูลผู้ป่วยหรือข้อมูลส่วนบุคคล</p>
+        <textarea id="feedback-comment" rows="2" placeholder="พิมพ์ความเห็นตรงนี้..." class="w-full text-sm border border-slate-200 rounded-lg p-2 focus:outline-none focus:border-blue-400 resize-none"></textarea>
+        <button id="btn-send-comment" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-lg">ส่ง</button>
       </div>
     </div>
   </div>
@@ -270,14 +286,12 @@ details[open] > summary::before{content:'▾ ';}
   <div class="max-w-7xl mx-auto px-4 space-y-1">
     <p class="font-medium text-slate-700">พัฒนาขึ้นโดย <span class="font-bold text-blue-600">Channarong Prasankok 2026</span></p>
     <p class="text-[12px] text-slate-400">© 2026 Channarong Prasankok — สงวนลิขสิทธิ์ทุกประการ (All Rights Reserved)</p>
-    <p class="text-[12px] text-slate-400">AI DocAligner &bull; ตรวจโครงสร้างหัวข้อด้วยกฎตายตัว ไม่ใช้ AI</p>
   </div>
 </footer>
 
 <div id="consent-bar" role="dialog" aria-label="การส่งสถิติการใช้งาน" class="hidden fixed bottom-0 inset-x-0 z-[90] bg-slate-900 text-white px-4 py-3 shadow-2xl">
   <div class="max-w-4xl mx-auto flex flex-col sm:flex-row gap-3 sm:items-center">
-    <p class="flex-1 text-[13px] leading-relaxed">ขออนุญาตส่งสถิติการเข้าใช้แบบไม่ระบุตัวตน (ที่อยู่หน้าเว็บและเวลา) ให้ผู้พัฒนา เพื่อดูว่ามีคนใช้เครื่องมือมากน้อยเพียงใด —
-      <b>ไม่ส่งไฟล์เอกสารหรือเนื้อหาในไฟล์</b> เลือก “ไม่อนุญาต” ก็ใช้งานได้เหมือนเดิมทุกอย่าง</p>
+    <p class="flex-1 text-[13px] leading-relaxed">ขอนับจำนวนผู้ใช้แบบไม่ระบุตัวตน — <b>ไม่ส่งไฟล์หรือเนื้อหาเอกสาร</b></p>
     <div class="flex gap-2 shrink-0">
       <button id="consent-no" type="button" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-[13px] font-semibold">ไม่อนุญาต</button>
       <button id="consent-yes" type="button" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-900 text-[13px] font-bold">อนุญาต</button>
@@ -338,9 +352,6 @@ document.addEventListener('DOMContentLoaded', () => {
         statusEl.className = 'text-[13px] leading-relaxed text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5';
       }
       document.getElementById('btn-start-analyze').setAttribute('disabled', 'true');
-    } else if (statusEl) {
-      statusEl.textContent = '✓ ระบบพร้อมใช้งาน (v5.6) — ประมวลผลในเครื่องของคุณ ไม่ต้องพึ่งอินเทอร์เน็ต';
-      statusEl.className = 'text-[13px] text-emerald-700';
     }
   }, 300);
 
@@ -598,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const proposalTableRows = document.getElementById('proposal-table-rows');
   const orphanWarnings = document.getElementById('orphan-warnings');
   const warningList = document.getElementById('warning-list');
-  const noChangesNote = document.getElementById('no-changes-note');
+  const APPROVE_LABEL = 'จัดรูปแบบให้เลย';
   const btnApproveProposal = document.getElementById('btn-approve-proposal');
   const btnRejectProposal = document.getElementById('btn-reject-proposal');
   const finalExportBox = document.getElementById('final-export-box');
@@ -752,6 +763,14 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       showToast('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + e.message);
       clearSelectedFile();
+      return;
+    }
+    // [v5.7] ตรวจทันทีหลังเลือกไฟล์ ผู้ใช้ไม่ต้องกดปุ่มสแกนเพิ่มอีกหนึ่งครั้ง
+    try {
+      runAnalysis();
+    } catch (e) {
+      showToast('ตรวจโครงสร้างหัวข้อไม่สำเร็จ: ' + e.message);
+      btnStartAnalyze.classList.remove('hidden');
     }
   }
 
@@ -774,10 +793,13 @@ document.addEventListener('DOMContentLoaded', () => {
     previewEmpty.classList.remove('hidden');
     previewRenderArea.classList.add('hidden');
     btnStartAnalyze.setAttribute('disabled','true');
+    btnStartAnalyze.classList.add('hidden');
+    document.getElementById('preview-legend').classList.add('hidden');
     btnStartAnalyze.classList.remove('bg-blue-600','text-white','hover:bg-blue-700');
     btnStartAnalyze.classList.add('bg-slate-300','text-slate-500','cursor-not-allowed');
     proposalBox.classList.add('hidden');
     finalExportBox.classList.add('hidden');
+    finalExportBox.querySelectorAll('.da-skip-note').forEach(n => n.remove());
     updateStepsIndicator(1);
   }
 
@@ -1808,7 +1830,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (st === 'extra') tabExtra++;
     });
     if (tabMissing > 0 || tabExtra > 0) {
-      warnings.push(`ตำแหน่ง Tab หลังเลขหัวข้อไม่สม่ำเสมอ: ไม่มี Tab ${tabMissing} รายการ, มี Tab เกิน 1 ตัว ${tabExtra} รายการ — ต้องติ๊ก "จัด Tab หลังเลขหัวข้อและรายการ" ในกล่องขอบเขตการปรับแก้ ระบบจึงจะแก้ให้ (ไม่ได้แก้อัตโนมัติ)`);
+      warnings.push(`ตำแหน่ง Tab หลังเลขหัวข้อไม่สม่ำเสมอ: ไม่มี Tab ${tabMissing} รายการ, มี Tab เกิน 1 ตัว ${tabExtra} รายการ — ระบบจะจัดให้เมื่อติ๊ก "เว้นหลังเลขหัวข้อให้เท่ากัน" (ติ๊กไว้ให้แล้วใน “ตั้งค่าเพิ่มเติม”)`);
     }
 
     // [v5.4] ผู้ใช้เคยกดปุ่ม "เพิ่มระยะห่างก่อนย่อหน้า" ของ Word ไว้แล้วในบางย่อหน้า
@@ -1854,7 +1876,7 @@ document.addEventListener('DOMContentLoaded', () => {
       warnings.unshift(scopeInfo.all
         ? 'ไม่พบคำว่า “บทที่” และคุณเลือกให้ปรับ “ทั้งเอกสาร” — ปก บทคัดย่อ และคำนำอาจถูกจัดตำแหน่งใหม่ด้วย กรุณาตรวจผลก่อนใช้งาน'
         : 'ไม่พบคำว่า “บทที่” ในเอกสารนี้ ระบบจึงเริ่มปรับตั้งแต่หัวข้อแรกที่มีเลข' + (firstTxt ? ' (“' + firstTxt + '”)' : '') +
-          ' เป็นต้นไป และไม่แตะส่วนก่อนหน้านั้น หากจุดเริ่มไม่ถูกต้อง ให้เลือกใหม่ในกล่อง “กำหนดขอบเขต” ด้านล่าง');
+          ' เป็นต้นไป และไม่แตะส่วนก่อนหน้านั้น หากจุดเริ่มไม่ถูกต้อง ให้เลือกใหม่ในกล่องสีเหลือง “เลือกจุดเริ่มจัด”');
     }
     planCtx.scopeText = scopeInfo.hasChapter
       ? 'เฉพาะเนื้อหาตั้งแต่ “บทที่ 1” จนถึงก่อนบรรณานุกรม/เอกสารอ้างอิง/ภาคผนวก — ไม่แตะปก คำนำ สารบัญ ตาราง และรูปภาพ'
@@ -1879,7 +1901,7 @@ document.addEventListener('DOMContentLoaded', () => {
     profileSelect.value = activeProfile;
     profileSelect.addEventListener('change', e => { activeProfile = e.target.value; lastOffsetOverride = null; if (xmlDoc) rerunAnalysis(true); });
   }
-  btnStartAnalyze.addEventListener('click', () => runAnalysis());
+  btnStartAnalyze.addEventListener('click', () => { btnStartAnalyze.classList.add('hidden'); runAnalysis(); });
   (function initPreviewToggle() {
     const btn = document.getElementById('btn-toggle-preview');
     const body = document.getElementById('preview-body');
@@ -1887,7 +1909,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       const open = body.classList.toggle('open');
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      btn.textContent = open ? 'ซ่อนตัวอย่าง' : 'แสดงตัวอย่าง';
+      btn.textContent = open ? 'ซ่อน' : 'แสดง';
     });
   })();
   // ติ๊กรายหัวข้อ (มีผลเฉพาะการ "ตั้ง Heading Style" — การจัดตำแหน่งยังทำทั้งเล่มเพื่อให้ต่อเนื่องกัน)
@@ -1928,7 +1950,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!planEl) return;
     const rows = [];
     const nStyle = headingItems.filter(i => i.apply !== false && (i.status.includes('❌') || i.status.includes('⚠'))).length;
-    if (nStyle > 0) rows.push('<li><b>ตั้ง Heading Style ให้ ' + nStyle + ' หัวข้อ</b> — ตามรายการในตารางด้านบน (ติ๊กออกเพื่อข้ามหัวข้อที่ไม่ต้องการ)</li>');
+    if (nStyle > 0) rows.push('<li><b>ตั้ง Heading Style ให้ ' + nStyle + ' หัวข้อ</b> — ดูได้ใน “ดูรายการหัวข้อ” (ติ๊กออกเพื่อข้ามหัวข้อที่ไม่ต้องการ)</li>');
     if (optStaircase.checked) {
       rows.push('<li><b>จัดตำแหน่งหัวข้อและย่อหน้า</b> — เลขของหัวข้อระดับถัดไปเริ่มตรงกับอักษรตัวแรกของชื่อหัวข้อระดับบน และย่อหน้าเนื้อหาเริ่มตรงกับอักษรตัวแรกของหัวข้อตนเอง</li>');
       rows.push('<li><b>เพิ่มที่ว่างก่อนย่อหน้า ' + (spaceBeforeTwips / 20) + ' พอยต์ เฉพาะย่อหน้าเนื้อหาที่ไม่มีเลขนำหน้า</b> — หัวข้อที่มีเลข (เช่น 1.1.3 กับ 1.1.4) ไม่เว้น จึงไม่ห่างกันผิดปกติ</li>');
@@ -1946,6 +1968,17 @@ document.addEventListener('DOMContentLoaded', () => {
     rows.push('<li><b>ขอบเขตการจัดตำแหน่ง/เยื้อง:</b> ' + planCtx.scopeText + '</li>');
     rows.push('<li><b>ต้นฉบับไม่ถูกแก้:</b> ระบบสร้างไฟล์ใหม่ให้ดาวน์โหลด ไฟล์เดิมในเครื่องคงเดิมทุกประการ</li>');
     planEl.innerHTML = rows.join('');
+    const chipsEl = document.getElementById('plan-chips');
+    if (chipsEl) {
+      const chips = [];
+      if (nStyle > 0) chips.push('ตั้ง Heading ' + nStyle + ' หัวข้อ');
+      if (optStaircase.checked) chips.push('จัดระยะเยื้อง');
+      if (optFixTabs.checked || optCleanSpaces.checked) chips.push('เว้นหลังเลขให้เท่ากัน');
+      if (optLeftAlign.checked) chips.push('เปลี่ยนจัดกระจายเป็นชิดซ้าย');
+      chipsEl.innerHTML = chips.length
+        ? '<b>ระบบจะ:</b> ' + chips.map(escapeHtml).join(' · ')
+        : '<b>ระบบจะ:</b> กำกับภาษาไทยเท่านั้น (ไม่ได้เลือกการจัดรูปแบบ)';
+    }
   }
 
   // กล่อง "กำหนดขอบเขต" แสดงเฉพาะเมื่อไม่พบคำว่า "บทที่"
@@ -1953,7 +1986,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const box = document.getElementById('scope-box');
     const sel = document.getElementById('scope-start');
     if (!box || !sel) return;
-    if (hasChapter) { box.classList.add('hidden'); return; }
+    if (hasChapter || !headingItems.length) { box.classList.add('hidden'); return; }
     const opts = ['<option value="auto">เริ่มจากหัวข้อแรกที่มีเลข (ค่าแนะนำ)</option>',
                   '<option value="all">ทั้งเอกสารตั้งแต่ย่อหน้าแรก (เสี่ยงกระทบปก/บทคัดย่อ)</option>'];
     headingItems.forEach((it, i) => {
@@ -2008,18 +2041,50 @@ document.addEventListener('DOMContentLoaded', () => {
       warningList.innerHTML = '';
       warnings.forEach(w => { const li = document.createElement('li'); li.textContent = w; warningList.appendChild(li); });
       const countEl = document.getElementById('warning-count');
-      if (countEl) countEl.textContent = `(${warnings.length} รายการ)`;
+      if (countEl) countEl.textContent = `(${warnings.length})`;
       orphanWarnings.classList.remove('hidden');
     } else {
       orphanWarnings.classList.add('hidden');
     }
 
-    const hasChanges = items.some(i => i.status.includes('❌') || i.status.includes('⚠'));
-    noChangesNote.classList.toggle('hidden', hasChanges);
+    renderScanSummary(items);
+    const tableCount = document.getElementById('table-count');
+    if (tableCount) tableCount.textContent = '(' + items.length + ')';
+    // คืนสภาพปุ่มทุกครั้งที่แสดงผลตรวจ (เดิมค้างเป็น "กำลังสร้างไฟล์…" และกดไม่ได้เมื่อทำไฟล์ที่ 2)
+    btnApproveProposal.disabled = false;
+    btnApproveProposal.classList.remove('opacity-60','cursor-wait');
+    btnApproveProposal.querySelector('span').textContent = APPROVE_LABEL;
     btnApproveProposal.classList.remove('hidden'); // [FIX-7] ต้องกดได้เสมอ เพราะตัวเลือกจัด Tab/เยื้อง/ชิดซ้าย ใช้ได้แม้ Style ถูกหมดแล้ว
 
     proposalBox.classList.remove('hidden');
     if (!suppressScroll) proposalBox.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // [v5.7] สรุปผลตรวจเป็นตัวเลขใหญ่ตัวเดียว ให้ผู้ใช้รู้ทันทีว่าต้องทำอะไรต่อ
+  function renderScanSummary(items) {
+    const box = document.getElementById('scan-summary');
+    const big = document.getElementById('sum-big');
+    const title = document.getElementById('sum-title');
+    const sub = document.getElementById('sum-sub');
+    if (!box) return;
+    const nFix = items.filter(i => i.status.includes('❌') || i.status.includes('⚠')).length;
+    box.classList.remove('is-fix', 'is-ok', 'is-none');
+    if (!items.length) {
+      box.classList.add('is-none');
+      big.textContent = '?';
+      title.textContent = 'ไม่พบหัวข้อที่มีเลขกำกับ';
+      sub.textContent = 'หัวข้อควรขึ้นต้นด้วย “บทที่ 1” หรือเลข เช่น 1.1, 1.1.1';
+    } else if (nFix > 0) {
+      box.classList.add('is-fix');
+      big.textContent = String(nFix);
+      title.textContent = 'หัวข้อที่ Style ยังไม่ถูกระดับ';
+      sub.textContent = 'จากทั้งหมด ' + items.length + ' หัวข้อ — กดปุ่มสีเขียวให้ระบบแก้ให้';
+    } else {
+      box.classList.add('is-ok');
+      big.textContent = '✓';
+      title.textContent = 'Style หัวข้อถูกต้องครบ ' + items.length + ' หัวข้อ';
+      sub.textContent = 'กดปุ่มสีเขียวเพื่อจัดระยะเยื้องและช่องไฟให้เรียบร้อย';
+    }
   }
 
   function renderOutlinePreview(items) {
@@ -2034,10 +2099,13 @@ document.addEventListener('DOMContentLoaded', () => {
                          item.expected === 'Heading2' ? 'text-xs font-bold text-slate-900' :
                          item.expected === 'Heading3' ? 'text-xs font-semibold text-slate-700' :
                          'text-[13px] font-medium text-slate-500';
-      div.className = sizeClass + ' py-0.5';
+      const needs = item.status.includes('❌') || item.status.includes('⚠');
+      div.className = sizeClass + ' py-0.5' + (needs ? ' da-needs-fix' : '');
       div.textContent = prettyHeading(item.text);
+      if (needs) div.title = 'ควรเป็น ' + item.expected + ' (เดิม ' + item.current + ')';
       previewRenderArea.appendChild(div);
     });
+    document.getElementById('preview-legend').classList.toggle('hidden', !items.some(i => i.status.includes('❌') || i.status.includes('⚠')));
   }
 
   function prettyHeading(t) {
@@ -2055,7 +2123,8 @@ document.addEventListener('DOMContentLoaded', () => {
     btnApproveProposal.classList.add('opacity-60','cursor-wait');
     const originalButtonText = btnApproveProposal.querySelector('span').textContent;
     resetEditStats();
-    btnApproveProposal.querySelector('span').textContent = 'กำลังสร้างไฟล์ฉบับปรับปรุง…';
+    finalExportBox.querySelectorAll('.da-skip-note').forEach(n => n.remove());
+    btnApproveProposal.querySelector('span').textContent = 'กำลังสร้างไฟล์…';
     // [FIX-B] กันกรณีติดค้างจนผู้ใช้ไม่รู้ว่าเกิดอะไรขึ้น — แจ้งเตือนและปลดปุ่มคืนให้กดใหม่ได้
     const watchdog = setTimeout(() => {
       if (btnApproveProposal.disabled) {
@@ -2114,11 +2183,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const anomalies = applyStaircaseIndent() || [];
       if (anomalies.length) {
         const box = document.getElementById('final-export-box');
-        const note = document.createElement('div');
-        note.className = 'p-3 bg-amber-50 border border-amber-200 rounded-lg text-[13px] text-amber-800 space-y-1';
-        note.innerHTML = '<div class="font-bold flex items-center gap-1">⚠ พบจุดที่ควรตรวจสอบด้วยตนเอง</div><ul class="list-disc pl-4 space-y-1">' +
+        const note = document.createElement('details');
+        note.className = 'da-skip-note rounded-lg border border-amber-200 bg-amber-50 text-[13px] text-amber-800';
+        note.innerHTML = '<summary class="cursor-pointer select-none px-3 py-2 font-bold">⚠ จุดที่ควรตรวจเองใน Word (' + anomalies.length + ')</summary><ul class="list-disc pl-4 space-y-1 px-3 pb-3">' +
           anomalies.map(a => `<li>${escapeHtml(a)}</li>`).join('') + '</ul>';
-        box.appendChild(note);
+        box.insertBefore(note, document.getElementById('btn-save-docx'));
       }
     };
       // รอฟอนต์และคำนวณให้เสร็จก่อนปลดปุ่มดาวน์โหลด เพื่อไม่ให้ได้ไฟล์ที่จัดระยะไม่ครบ
@@ -2172,9 +2241,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (skippedStyleItems.length) {
         const box = document.getElementById('final-export-box');
         const note = document.createElement('div');
-        note.className = 'p-3 bg-amber-50 border border-amber-200 rounded-lg text-[13px] text-amber-800';
+        note.className = 'da-skip-note p-3 bg-amber-50 border border-amber-200 rounded-lg text-[13px] text-amber-800';
         note.textContent = `ไม่ได้แก้ ${skippedStyleItems.length} หัวข้อ เพราะไฟล์ต้นฉบับไม่มี Heading Style ที่ต้องใช้ โปรดสร้าง Style ใน Word ก่อนแล้วสแกนใหม่`;
-        box.appendChild(note);
+        box.insertBefore(note, document.getElementById('btn-save-docx'));
       }
 
       const sumEl = document.getElementById('summary-report');
@@ -2214,6 +2283,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnRejectProposal.addEventListener('click', () => {
     proposalBox.classList.add('hidden');
+    btnStartAnalyze.classList.remove('hidden');
     updateStepsIndicator(1);
   });
 
