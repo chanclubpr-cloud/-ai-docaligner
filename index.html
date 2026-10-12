@@ -40,9 +40,14 @@ details > summary::-webkit-details-marker{display:none;}
 details > summary::before{content:'▸ ';}
 details[open] > summary::before{content:'▾ ';}
 /* คลาสที่ไม่มีใน Tailwind ที่คอมไพล์ไว้ + ส่วนประกอบหน้าจอแบบเรียบง่าย (v5.7) */
-.text-base{font-size:1rem;line-height:1.5rem}
+.text-base{font-size:1.125rem;line-height:1.75rem}
+.text-xs{font-size:.9375rem;line-height:1.4rem}
+.text-sm{font-size:1.0625rem;line-height:1.6rem}
+.text-\[12px\]{font-size:14px;line-height:1.45}
+.text-\[13px\]{font-size:15px;line-height:1.5}
+.text-lg{font-size:1.25rem;line-height:1.75rem}
 @media (min-width:1024px){ .lg\:self-start{align-self:flex-start} }
-.da-steps{display:flex;justify-content:space-between;gap:.5rem;background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem 1rem;font-size:.875rem;list-style:none;margin:0 0 1.5rem}
+.da-steps{display:flex;justify-content:space-between;gap:.5rem;background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem 1rem;font-size:1.0625rem;list-style:none;margin:0 0 1.5rem}
 @media (max-width:359px){.da-steps{font-size:.75rem;padding:.6rem .5rem}}
 .da-steps li{display:flex;align-items:center;gap:.4rem;white-space:nowrap}
 .da-step-dot{width:1.5rem;height:1.5rem;border-radius:9999px;border:2px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0}
@@ -50,7 +55,7 @@ details[open] > summary::before{content:'▾ ';}
 .da-summary.is-fix{background:#fffbeb;border-color:#fcd34d;color:#78350f}
 .da-summary.is-ok{background:#f0fdf4;border-color:#bbf7d0;color:#14532d}
 .da-summary.is-none{background:#f8fafc;border-color:#e2e8f0;color:#334155}
-.da-big{font-size:2.25rem;line-height:1;font-weight:800;min-width:2.5rem;text-align:center}
+.da-big{font-size:2.75rem;line-height:1;font-weight:800;min-width:2.5rem;text-align:center}
 .da-mark-dot{display:inline-block;width:.6rem;height:.6rem;border-radius:9999px;background:#f59e0b;vertical-align:middle}
 .da-needs-fix{border-left:3px solid #f59e0b;padding-left:.4rem;background:#fffbeb}
 </style>
@@ -63,7 +68,7 @@ details[open] > summary::before{content:'▾ ';}
       <div class="bg-gradient-to-br from-indigo-600 to-blue-500 text-white p-2 rounded-xl shadow-md"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6" aria-hidden="true"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m3 15 2 2 4-4"/></svg></div>
       <div>
         <h1 class="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-slate-700">AI DocAligner</h1>
-        <span class="text-[13px] text-indigo-500 font-medium">จัดหัวข้อเล่มวิชาการอัตโนมัติ &bull; v5.7</span>
+        <span class="text-[13px] text-indigo-500 font-medium">จัดหัวข้อเล่มวิชาการอัตโนมัติ &bull; v5.8</span>
       </div>
     </div>
     <span class="text-[12px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold shadow-sm flex items-center gap-1">
@@ -123,6 +128,12 @@ details[open] > summary::before{content:'▾ ';}
         </div>
 
         <p id="plan-chips" class="text-[13px] text-slate-600 leading-relaxed"></p>
+
+        <label id="align-box" class="flex items-start gap-3 cursor-pointer rounded-lg border border-slate-200 bg-slate-50 p-3 text-[13px] text-slate-700">
+          <input id="opt-left-align" type="checkbox" class="mt-1 h-5 w-5 shrink-0">
+          <span><b class="text-slate-800">เปลี่ยนการจัดกระจายเป็นชิดซ้าย</b>
+            <span id="align-note" class="block text-slate-500 mt-0.5"></span></span>
+        </label>
 
         <div id="scope-box" class="hidden rounded-lg border border-amber-300 bg-amber-50 p-3 text-[13px] text-amber-900 space-y-2" role="group" aria-label="เลือกจุดเริ่มจัดรูปแบบ">
           <div class="font-bold">ไม่พบคำว่า “บทที่” — เลือกจุดเริ่มจัด</div>
@@ -203,10 +214,6 @@ details[open] > summary::before{content:'▾ ';}
               <label class="flex items-start gap-2 cursor-pointer">
                 <input id="opt-clean-spaces" type="checkbox" class="mt-1 h-4 w-4">
                 <span><b>ลบช่องว่างค้าง</b> หน้าเลขหัวข้อ</span>
-              </label>
-              <label class="flex items-start gap-2 cursor-pointer">
-                <input id="opt-left-align" type="checkbox" class="mt-1 h-4 w-4">
-                <span><b>เปลี่ยนจัดกระจายเป็นชิดซ้าย</b> ช่องไฟไทยจะสม่ำเสมอ</span>
               </label>
             </div>
             <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-1.5" aria-live="polite">
@@ -1851,7 +1858,12 @@ document.addEventListener('DOMContentLoaded', () => {
     optStaircase.checked = true;
     optCleanSpaces.checked = true;
     const thaiDistCount = countThaiDistribute();
-    optLeftAlign.checked = thaiDistCount > 0;
+    // [v5.8] ไม่แตะการจัดกระจายเป็นค่าเริ่มต้น — ผู้ใช้เลือกเองได้ที่กล่อง "เปลี่ยนการจัดกระจายเป็นชิดซ้าย"
+    // (ไม่รีเซ็ตค่าที่ผู้ใช้ติ๊กไว้เมื่อระบบตรวจซ้ำ เช่น เปลี่ยนรูปแบบเล่ม)
+    const alignNote = document.getElementById('align-note');
+    if (alignNote) alignNote.textContent = thaiDistCount > 0
+      ? 'พบการจัดกระจายแบบไทย ' + thaiDistCount + ' จุด — ถ้าไม่ติ๊ก ระบบจะคงไว้ตามเดิม'
+      : 'ไม่ติ๊ก = คงการจัดตำแหน่งข้อความเดิมของเอกสาร';
 
     // ---- ขอบเขต + ข้อมูลอ้างอิงตำแหน่งของแต่ละหัวข้อ ----
     const scopeInfo = computeScopeSet(classified);
@@ -1974,7 +1986,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (nStyle > 0) chips.push('ตั้ง Heading ' + nStyle + ' หัวข้อ');
       if (optStaircase.checked) chips.push('จัดระยะเยื้อง');
       if (optFixTabs.checked || optCleanSpaces.checked) chips.push('เว้นหลังเลขให้เท่ากัน');
-      if (optLeftAlign.checked) chips.push('เปลี่ยนจัดกระจายเป็นชิดซ้าย');
+      chips.push(optLeftAlign.checked ? 'เปลี่ยนจัดกระจายเป็นชิดซ้าย' : 'คงการจัดกระจายเดิม');
       chipsEl.innerHTML = chips.length
         ? '<b>ระบบจะ:</b> ' + chips.map(escapeHtml).join(' · ')
         : '<b>ระบบจะ:</b> กำกับภาษาไทยเท่านั้น (ไม่ได้เลือกการจัดรูปแบบ)';
