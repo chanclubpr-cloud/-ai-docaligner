@@ -71,7 +71,7 @@ details[open] > summary::before{content:'▾ ';}
       <div class="bg-gradient-to-br from-indigo-600 to-blue-500 text-white p-2 rounded-xl shadow-md"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6" aria-hidden="true"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m3 15 2 2 4-4"/></svg></div>
       <div>
         <h1 class="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-slate-700">AI DocAligner</h1>
-        <span class="text-[13px] text-indigo-500 font-medium">จัดหัวข้อเล่มวิชาการอัตโนมัติ &bull; v5.9</span>
+        <span class="text-[13px] text-indigo-500 font-medium">จัดหัวข้อเล่มวิชาการอัตโนมัติ &bull; v5.10</span>
       </div>
     </div>
     <span class="text-[12px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold shadow-sm flex items-center gap-1">
@@ -455,6 +455,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let structureHint = null;   // [P23] ผลตรวจโครงสร้างรอบแรก ใช้ช่วยตัดสินรอบสอง
   // ส่วนท้ายเล่มที่มีรูปแบบเฉพาะของตัวเอง — ห้ามปรับระยะเยื้องเด็ดขาด
   const STOP_SECTION_RE = /^\s*(บรรณานุกรม|เอกสารอ้างอิง|รายการอ้างอิง|ภาคผนวก|References?|Bibliography|Appendix)/i;
+  // ชื่อภาพ/ตาราง และบรรทัด "ที่มา:" มีตำแหน่งตามเกณฑ์ของตัวเอง (ภาพกึ่งกลาง ตารางชิดซ้าย) ห้ามเยื้องตามเนื้อหา
+  const CAPTION_RE = /^\s*(?:(?:ภาพที่|รูปที่|ตารางที่|แผนภูมิที่|แผนภาพที่|แผนผังที่|กราฟที่|Figure|Table|Fig\.)\s*[0-9๐-๙]|ที่มา\s*[:：])/i;
+  // รายการสารบัญที่พิมพ์เอง: ชื่อหัวข้อ + Tab + เลขหน้า (เลขอารบิก/เลขไทย/ก-ฮ/โรมัน)
+  const TAB_PAGE_RE = /\t[\s.…]*([0-9๐-๙]{1,3}|[ก-ฮ]|[ivxlcdm]{1,6})\s*$/i;
   const FIXED_LADDER = true; // ตั้ง false ถ้าต้องการกลับไปใช้การวัดความกว้างเลขจริงด้วย canvas
   // [P19] ระยะเยื้องต้องอิง "ระดับหัวข้อ" ไม่ใช่ "จำนวนจุด" เพราะแต่ละมหาวิทยาลัยแมปจุด->ระดับไม่เท่ากัน
   // มข.: เลขเปล่า=ระดับ2(ชิดซ้าย), x.x=ระดับ3(เยื้อง 1 ขั้น)  |  SIU: x.x=ระดับ2(ชิดซ้าย)
@@ -947,6 +951,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let splitSeg = segments.find(s => trimmedLen > s.start && trimmedLen <= s.end);
     if (!splitSeg) splitSeg = segments.find(s => trimmedLen === s.end) || segments[segments.length - 1];
 
+    // ไม่มีข้อความตามหลังเลข (เช่น "บทที่ 1" บรรทัดเดียว): Tab ท้ายบรรทัดทำให้ข้อความกึ่งกลางเบี้ยวซ้าย
+    if (!fullText.slice(L).trim()) {
+      collapseFollowingTabRuns(splitSeg.run);
+      return false;
+    }
+
     const localOffset = trimmedLen - splitSeg.start;
     const fullSegText = splitSeg.tNode.textContent || '';
     const prefixText = fullSegText.slice(0, localOffset);
@@ -986,6 +996,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const { m, L } = matchNumberPrefix(fullText);
     if (!m || L === 0) return 'ok';
     const numEnd = fullText.slice(0, L).replace(/\s+$/, '').length;
+    if (!fullText.slice(L).trim()) return 'ok';
 
     let pos = 0, tabs = 0, sawSpace = false, done = false;
     for (const r of kids) {
@@ -1257,7 +1268,8 @@ document.addEventListener('DOMContentLoaded', () => {
     items.forEach(item => {
       const { p, text, kind } = item;
       if (kind === 'chapter') { currentTextStart = BASE_INDENT_TWIPS; return; }
-      if (kind === 'empty' || kind === 'table' || kind === 'toc' || kind === 'inlineList') return;
+      if (kind === 'empty' || kind === 'table' || kind === 'toc' || kind === 'inlineList'
+          || kind === 'chapterTitle' || kind === 'caption') return;
       if (isStopHeading(text)) return;
 
       if (kind === 'unnumberedHeading') {
@@ -1314,6 +1326,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return;
       }
+      // ย่อหน้าที่จัดกึ่งกลาง/ชิดขวา (ชื่อเรื่อง สมการ ข้อความใต้ภาพ) ถ้าใส่ระยะเยื้องจะเบี้ยวออกจากกึ่งกลาง
+      const jcv = paraJc(p);
+      if (jcv === 'center' || jcv === 'right' || jcv === 'end') return;
       if (editable(p)) { setFirstLine(p, currentTextStart); setSpaceBefore(p, spaceBeforeTwips); }
     });
 
@@ -1352,6 +1367,84 @@ document.addEventListener('DOMContentLoaded', () => {
     return st.getAttributeNS(W_NS, 'val') || st.getAttribute('w:val');
   }
 
+  function wVal(el) { return el ? (el.getAttributeNS(W_NS, 'val') || el.getAttribute('w:val') || '') : ''; }
+  let styleIndexDoc = null, styleIndex = null, defaultParaStyleId = null;
+  function stylesById() {
+    if (styleIndexDoc !== stylesDoc) {
+      styleIndexDoc = stylesDoc; styleIndex = {}; defaultParaStyleId = null;
+      if (stylesDoc) Array.from(stylesDoc.getElementsByTagNameNS(W_NS, 'style')).forEach(s => {
+        const id = s.getAttributeNS(W_NS, 'styleId') || s.getAttribute('w:styleId');
+        if (id) styleIndex[id] = s;
+        const type = s.getAttributeNS(W_NS, 'type') || s.getAttribute('w:type');
+        const def = s.getAttributeNS(W_NS, 'default') || s.getAttribute('w:default');
+        if (type === 'paragraph' && (def === '1' || def === 'true') && !defaultParaStyleId) defaultParaStyleId = id;
+      });
+    }
+    return styleIndex;
+  }
+  // การจัดตำแหน่งที่มีผลจริงของย่อหน้า: ดูที่ย่อหน้าก่อน แล้วไล่ตาม Style (basedOn) ขึ้นไป
+  function paraJc(p) {
+    const own = directChild(directChild(p, 'pPr'), 'jc');
+    if (own) return wVal(own);
+    const idx = stylesById();
+    let sid = getPStyle(p) || defaultParaStyleId;
+    for (let i = 0; sid && i < 10; i++) {
+      const st = idx[sid];
+      if (!st) break;
+      const jc = directChild(directChild(st, 'pPr'), 'jc');
+      if (jc) return wVal(jc);
+      sid = wVal(directChild(st, 'basedOn')) || null;
+    }
+    return '';
+  }
+  // "บทที่ x" ที่เป็นหัวบทจริงจะสั้น/อยู่กึ่งกลาง/ตั้ง Heading ไว้ — กันประโยคเนื้อหา เช่น "บทที่ 2 เป็นการทบทวน..."
+  function isChapterPara(p, text) {
+    if (!CHAPTER_RE.test(text) || isInsideTable(p)) return false;
+    return text.length <= 60 || isHeadingStyled(p) || paraJc(p) === 'center';
+  }
+  function getParaTextWithTabs(p) {
+    let s = '';
+    const all = p.getElementsByTagNameNS(W_NS, '*');
+    for (let i = 0; i < all.length; i++) {
+      const n = all[i];
+      if (n.localName === 't') s += n.textContent || '';
+      else if ((n.localName === 'tab' || n.localName === 'ptab') && n.parentNode && n.parentNode.localName === 'r') s += '\t';
+    }
+    return s;
+  }
+  // ไฟล์ส่วนใหญ่สร้างจาก Word ที่ไม่เคยใช้ Heading 3-5 มาก่อน จึงไม่มีนิยาม Style นั้นใน styles.xml
+  // สร้างให้เองแบบไม่มี rPr เพื่อให้หน้าตาตัวอักษรเหมือนเดิม (ใช้ formatting เดิมของย่อหน้า) แต่ขึ้นสารบัญ/Navigation ได้
+  function ensureHeadingStyle(level) {
+    if (headingStyleMap[level]) return true;
+    if (!stylesDoc || level < 1 || level > 9) return false;
+    const idx = stylesById();
+    const id = idx['Heading' + level] ? 'DocAlignerHeading' + level : 'Heading' + level;
+    const mk = (name, attrs) => {
+      const e = stylesDoc.createElementNS(W_NS, 'w:' + name);
+      Object.keys(attrs || {}).forEach(k => e.setAttributeNS(W_NS, 'w:' + k, attrs[k]));
+      return e;
+    };
+    const st = mk('style', { type: 'paragraph', styleId: id });
+    st.appendChild(mk('name', { val: 'heading ' + level }));
+    if (defaultParaStyleId) {
+      st.appendChild(mk('basedOn', { val: defaultParaStyleId }));
+      st.appendChild(mk('next', { val: defaultParaStyleId }));
+    }
+    st.appendChild(mk('uiPriority', { val: '9' }));
+    if (level > 1) st.appendChild(mk('unhideWhenUsed'));
+    st.appendChild(mk('qFormat'));
+    const pPr = mk('pPr');
+    pPr.appendChild(mk('keepNext'));
+    pPr.appendChild(mk('keepLines'));
+    pPr.appendChild(mk('outlineLvl', { val: String(level - 1) }));
+    st.appendChild(pPr);
+    stylesDoc.documentElement.appendChild(st);
+    idx[id] = st;
+    headingStyleMap[level] = id;
+    stylesDirty = true;
+    return true;
+  }
+
   // สารบัญอัตโนมัติใช้ข้อความเลขหัวข้อเหมือนเนื้อหา แต่เป็น field/navigation ของ Word
   // ห้ามเปลี่ยนเป็น Heading หรือจัด Tab เพราะจะทำให้รูปแบบสารบัญและเลขหน้าคลาดเคลื่อน
   const PAGE_NUMBER_ONLY_RE = /^[0-9\u0E50-\u0E59]{1,3}$|^[ก-ฮ]$/;
@@ -1363,11 +1456,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const flagged = new Set();
     for (let i = 0; i < paragraphs.length; i++) {
       const t = texts[i];
-      if (!t) continue;
+      if (!t || isInsideTable(paragraphs[i])) continue;
       if (DOT_LEADER_RE.test(t)) { flagged.add(paragraphs[i]); continue; }
+      const raw = getParaTextWithTabs(paragraphs[i]);
+      if (TAB_PAGE_RE.test(raw) && raw.replace(TAB_PAGE_RE, '').trim()) { flagged.add(paragraphs[i]); continue; }
       let j = i + 1;
       while (j < paragraphs.length && !texts[j]) j++;
-      if (j < paragraphs.length && PAGE_NUMBER_ONLY_RE.test(texts[j])) {
+      if (j < paragraphs.length && PAGE_NUMBER_ONLY_RE.test(texts[j]) && !isInsideTable(paragraphs[j])) {
         flagged.add(paragraphs[i]);
         flagged.add(paragraphs[j]);
       }
@@ -1419,7 +1514,7 @@ document.addEventListener('DOMContentLoaded', () => {
     paragraphs.forEach(p => {
       const text = getParaText(p);
       if (!text) return;
-      const cm = CHAPTER_NUM_RE.exec(text);
+      const cm = isChapterPara(p, text) ? CHAPTER_NUM_RE.exec(text) : null;
       if (cm) { chapter = thaiDigits(cm[1]); return; }
       const d = NUMBER_RE.exec(text);
       if (d && hasRealHeadingText(text, d[0].length) && chapter !== null) {
@@ -1519,6 +1614,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let maxDots = 0;
     let prevIndent = 0;
     let currentChapter = null;
+    let afterChapter = null;
     const DEDENT_THRESHOLD = 200;
     // รอบแรก (structureHint = null) ยังไม่รู้โครงสร้าง จึงไม่บังคับกฎนี้ เพื่อให้เห็นหัวข้อครบก่อน
     const numberedSeries = collectNumberedSeries(paragraphs);
@@ -1536,12 +1632,28 @@ document.addEventListener('DOMContentLoaded', () => {
       const originalIndent = getOriginalFirstLineIndent(p);
       const insideTable = isInsideTable(p);
 
-      if (CHAPTER_RE.test(text)) {
+      if (isChapterPara(p, text)) {
         const cm = CHAPTER_NUM_RE.exec(text);
         currentChapter = cm ? thaiDigits(cm[1]) : null;
         maxDots = 0;
         prevIndent = originalIndent;
+        afterChapter = { noTail: !text.replace(cm ? CHAPTER_NUM_RE : CHAPTER_RE, '').trim() };
         results.push({ p, text, kind: 'chapter' });
+        return;
+      }
+
+      // ชื่อบทที่พิมพ์แยกบรรทัดใต้ "บทที่ x" (เช่น "บทนำ") เป็นส่วนหนึ่งของหัวบท ไม่ใช่หัวข้อย่อยหรือเนื้อหา
+      const ct = afterChapter;
+      afterChapter = null;
+      if (ct && !insideTable && text.length <= 80 && !NUMBER_RE.test(text) && !BRACKET_RE.test(text)
+          && !BARE_NUMBER_RE.test(text)
+          && (paraJc(p) === 'center' || (ct.noTail && (!isHeadingStyled(p) || headingStyleMap[1] === getPStyle(p))))) {
+        results.push({ p, text, kind: 'chapterTitle' });
+        return;
+      }
+
+      if (!insideTable && CAPTION_RE.test(text)) {
+        results.push({ p, text, kind: 'caption' });
         return;
       }
 
@@ -1781,7 +1893,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const warnings = [...warningsFromStructure, ...ambiguousWarnings];
     if (missingLevels.size) {
       const levels = Array.from(missingLevels).sort((a,b)=>a-b).join(', ');
-      warnings.push(`ไฟล์นี้ไม่มี Style สำหรับ Heading ระดับ ${levels} อยู่เลย — ถ้ากดอนุมัติ ระบบจะอ้างอิงชื่อ "HeadingN" มาตรฐานแทน ซึ่งอาจไม่มีรูปแบบ (ตัวหนา/ขนาด/สี) ที่แท้จริงติดมาด้วย แนะนำให้สร้าง Style ระดับนี้ใน Word ก่อน`);
+      warnings.push(stylesDoc
+        ? `ไฟล์นี้ยังไม่มี Heading ระดับ ${levels} — ระบบจะสร้างให้อัตโนมัติ โดยคงแบบอักษร ขนาด และตัวหนาเดิมของหัวข้อไว้`
+        : `ไฟล์นี้ไม่มีส่วนเก็บ Style (styles.xml) — ระบบตั้ง Heading ระดับ ${levels} ให้ไม่ได้ ลองเปิดไฟล์ใน Word แล้วกด Save As .docx ใหม่ก่อน`);
     }
     const dupCount = {};
     seenNumbers.forEach(({number, chapterIndex}) => {
@@ -2155,11 +2269,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!item.status.includes('❌') && !item.status.includes('⚠')) return;
       if (item.apply === false) { editStats.stylesUserSkipped++; return; }
       const level = Number(item.expected.replace('Heading', ''));
-      if (!headingStyleMap[level]) {
+      if (!ensureHeadingStyle(level)) {
         skippedStyleItems.push(item.text);
         editStats.stylesSkipped++;
         return;
       }
+      item.expectedStyleId = headingStyleMap[level];
       const p = paraElements[headingItems.indexOf(item)];
       let pPr = directChild(p, 'pPr');
       if (!pPr) {
